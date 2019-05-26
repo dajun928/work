@@ -1,3 +1,6 @@
 
+NLP
+概念的理解  了解作用
+
 Flask快速入门
 https://www.cnblogs.com/huchong/p/8227606.html
