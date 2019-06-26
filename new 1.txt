@@ -1,0 +1,34 @@
+ETL  BI  大数据 
+
+业务  数据分析 pandas excel mysql  matplot
+
+BI
+
+ETL
+
+爬虫
+
+python后台开发
+
+动手敲代码
+
+多动手
+
+
+多看技术方案
+
+
+
+逻辑思维
+
+
+敲代码  
+
+python三大神器之virtualenv
+
+
+
+
+
+
+
