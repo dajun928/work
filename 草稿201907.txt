@@ -1,0 +1,79 @@
+ETL  BI  大数据 
+
+业务  数据分析 pandas excel mysql  matplot
+
+BI
+
+ETL
+
+爬虫
+
+python后台开发
+
+动手敲代码
+
+多动手
+
+
+多看技术方案
+
+
+
+逻辑思维
+
+
+敲代码  
+
+
+http://172.18.127.255:5000/
+http://47.107.177.19:5000/
+
+
+http://47.107.177.19:8088/
+
+
+使用gunicorn 启动工程
+
+
+gunicorn -w 3 -b 127.0.0.1:8000 helloworld:app
+gunicorn -w 3 -b 127.0.0.1:8000 helloworld:app
+
+
+
+
+部署项目时 请求流程
+Client <===> Nginx <===> gunicorn <===> Flask服务
+
+
+配置nginx 服务器脚本1.安装完的nginx 在 /usr/local/nginx 目录下， 我们可以找到conf文件夹下的 nginx.conf 文件， 将其修改
+ 
+2.
+
+#添加nginx 需要监听的端口信息
+server {
+
+listen 8001;
+server_name instagram.zhyh2010.com;
+location /{
+proxy_pass http://127.0.0.1:8000; }
+}
+实际上， 我们将外部通过 8001 端口发送过来的请求， 代理给了 127.0.0.1:8000 也就是我们的 flask 项目
+
+记得完成 nginx 需要重新起动 nginx 服务喔！
+
+
+2.这里说明一下: 
+- D 表示后台运行 
+- w 表示有3 个 工作线程（感觉有些类似 nginx 的 master-worker 模型） 
+- b 指定ip 和端口 
+- 这里采用本机访问， 主要是为了使用nginx 进行代理， 方便管理 
+- application 表存放 写着全局变量 app 的那个工程文件夹 
+- 在我们的这个工程中， 即包含 init.py 的那个文件 
+- app 为全局变量 （app = Flask(__name__)） 
+- ps： 在下面图示文件夹中运行 gunicorn 指令 
+
+到达这一步，可以在linux服务器上访问127.0.0.1:8000
+注意：如果想通过本地Windows访问的话就要把ip改为阿里云的公网的ip
+
+
+
