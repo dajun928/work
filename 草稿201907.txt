@@ -49,6 +49,14 @@ Client <===> Nginx <===> gunicorn <===> Flask服务
  
 2.
 
+cd /usr/local/src
+wget http://nginx.org/download/nginx-1.1.10.tar.gz
+tar -zxvf nginx-1.1.10.tar.gz
+cd nginx-1.1.10
+./configure
+make
+make install
+
 #添加nginx 需要监听的端口信息
 server {
 
