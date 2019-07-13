@@ -148,6 +148,65 @@ nginx
 https://www.bilibili.com/video/av22576578/?p=4
 http://www.edrawsoft.cn/viewer/public/s/e194d338895116
 
+--------------------------------------------------------------------------------------------
+第一步，下载mysql的镜像：
+地址：https://hub.docker.com/_/percona/
+
+docker pull percona:5.6
+ 
+ 
+
+第二步，创建容器：
+docker create --name percona -v /data/mysql-data:/var/lib/mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root percona:5.6
+
+解释：
+--name percona 指定是容器的名称
+-v /data/mysql-data:/var/lib/mysql  将主机目录/data/mysql-data挂载到容器的/var/lib/mysql上
+-p 33306:3306 设置端口映射，主机端口是33306，容器内部端口3306
+-e MYSQL_ROOT_PASSWORD=root  设置容器参数，设置root用户的密码为root
+percona:5.6 镜像名:版本
+
+ 
+
+第三步，启动容器：
+docker start percona
+
+ 
+
+第四步，进行测试：
+
+
+docker create -p 16379:6379 --name redis redis:4.0
+
+
+
+ssh://root:************@47.107.177.19:22
+
+
+--------------------------------------------------------------------------------------------
+案例：创建Redis的容器。
+
+docker create -p 16379:6379 --name redis redis:3.0
+ 
+查看容器列表：
+docker ps -a 
+
+启动容器：
+docker start redis #指定容器的id，只要输入前几位即可
+ 
+
+通过客户端进行测试：
+
+--------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
 
 
 
