@@ -200,8 +200,23 @@ docker start redis #指定容器的id，只要输入前几位即可
 --------------------------------------------------------------------------------------------
 
 
+#第一行必须指令基于的基础镜像
+FROM ubutu
 
+#维护者信息
+MAINTAINER docker_user  zhangzhijun@itcast.cn
 
+#镜像的操作指令
+RUN echo "deb http://archive.ubuntu.com/ubuntu/ raring main universe" >> /etc/apt/sources.list
+RUN apt-get update && apt-get install -y ngnix 
+RUN echo "\ndaemon off;">>/etc/ngnix/nignix.conf
+
+#容器启动时执行指令
+CMD /usr/sbin/ngnix
+
+如何使用Docker部署Flask应用
+https://www.bilibili.com/video/av59236839?from=search&seid=10025361429857424928
+https://www.theodoresi.top/blog/vim/deploy-a-flask-app-in-docker
 
 
 
