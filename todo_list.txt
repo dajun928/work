@@ -41,9 +41,12 @@ https://www.cnblogs.com/peng104/p/10296717.html
 
 https://chinasoftinc.com/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2fchinasoftinc.com%2fowa%2f
 
+使用docker部署flask项目
+https://blog.csdn.net/liudian_cz/article/details/88850773
 
-
-
+如何使用Docker部署Flask应用
+https://www.bilibili.com/video/av59236839?from=search&seid=10025361429857424928
+https://www.theodoresi.top/blog/vim/deploy-a-flask-app-in-docker
 
 困惑
 
