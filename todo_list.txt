@@ -39,9 +39,17 @@ https://www.cnblogs.com/peng104/p/10296717.html
 
 准备面试
 
+https://chinasoftinc.com/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2fchinasoftinc.com%2fowa%2f
 
 
-https://blog.csdn.net/zhangdongren/article/details/82685932
+
+
+
+困惑
+
+gunicorn 单独起服务 能否直接掉接口
+
+
 
 待看的电视剧
 
