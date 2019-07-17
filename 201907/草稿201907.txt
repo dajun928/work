@@ -221,13 +221,104 @@ https://www.theodoresi.top/blog/vim/deploy-a-flask-app-in-docker
 
 
 
+生成requirements.txt文件
+pip freeze > requirements.txt
+
+
+安装requirements.txt依赖
+pip install -r requirements.txt
+
+-----------------------------------------------------------------------------------------
+FROM python:3
+
+WORKDIR /usr/src/app
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD [ "python", "./your-daemon-or-script.py" ]
+
+
+-----------------------------------------------------------------------------------------
+
+#基于的基础镜像
+FROM python:3.7
+
+#代码添加到code文件夹
+ADD ./EF_NFCS /code
+
+# 设置code文件夹是工作目录
+WORKDIR /code
+
+# 安装支持
+RUN pip install -r requirements.txt
+
+CMD ["python", "/code/package/server.py"]
+----------------------------------------------------------------------------------------- 
+作者：学编程的司马光 
+来源：CSDN 
+原文：https://blog.csdn.net/u013282737/article/details/85233408 
+版权声明：本文为博主原创文章，转载请附上博文链接！
+-----------------------------------------------------------------------------------------
+
+#基于的基础镜像
+FROM python:3
+
+#代码添加到code文件夹
+ADD ./flask_demo /usr/src/app
+
+# 设置app文件夹是工作目录
+WORKDIR /usr/src/app
+
+# 安装支持
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+CMD [ "python", "/usr/src/app/api_server.py" ]
+
+docker build -t flask_demo_img .
+
+docker run -it -p 8060:5001 --name flask_demo_cn flask_demo_img
 
 
 
 
+import requests
+
+url="http://127.0.0.1:8060/"        # local test
+
+
+responses=requests.get(url)
+print(responses)
+# 查看响应内容，response.text 返回的是Unicode格式的数据
+print(responses.text)
 
 
 
+----------------------------------------------------------------------------------------
+[root@mylinux docker_test]# cat Dockerfile 
+#基于的基础镜像
+FROM python:3
 
+#代码添加到code文件夹
+ADD ./flask_demo /usr/src/app
+
+# 设置app文件夹是工作目录
+WORKDIR /usr/src/app
+
+# 安装支持
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+CMD [ "python", "/usr/src/app/api_server.py" ]
+----------------------------------------------------------------------------------------
+
+生成镜像
+docker build -t flask_demo_img .
+
+启动容器
+docker run -it -p 8060:5001 --name flask_demo_cn flask_demo_img
 
 
