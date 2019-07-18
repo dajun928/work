@@ -298,6 +298,18 @@ print(responses.text)
 
 
 ----------------------------------------------------------------------------------------
+[root@mylinux docker_test]# tree
+.
+├── Dockerfile
+└── flask_demo
+    ├── api_client.py
+    ├── api_server.py
+    ├── __init__.py
+    ├── requirements.txt
+    └── test.py
+
+1 directory, 6 files
+------------------------------------------------------
 [root@mylinux docker_test]# cat Dockerfile 
 #基于的基础镜像
 FROM python:3
@@ -311,14 +323,13 @@ WORKDIR /usr/src/app
 # 安装支持
 RUN pip install --no-cache-dir -r requirements.txt
 
-
 CMD [ "python", "/usr/src/app/api_server.py" ]
-----------------------------------------------------------------------------------------
+------------------------------------------------------
 
 生成镜像
 docker build -t flask_demo_img .
 
 启动容器
 docker run -it -p 8060:5001 --name flask_demo_cn flask_demo_img
-
+----------------------------------------------------------------------------------------
 
