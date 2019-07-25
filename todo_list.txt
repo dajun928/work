@@ -62,6 +62,9 @@ https://www.bilibili.com/video/av10590361?from=search&seid=14628938599707285109
 pycharm 个人认为最舒服最漂亮的主题风格，Material Theme UI
 https://blog.csdn.net/u012750106/article/details/86577792
 
+
+查看D盘下  所有文件夹的大小
+
 待看的电视剧
 
 《大江大河》
