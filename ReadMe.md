@@ -1,1 +1,1 @@
-some notes for work
+some notes from work
