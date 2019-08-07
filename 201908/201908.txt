@@ -6,3 +6,34 @@ https://www.cnblogs.com/homeworknotes/
 
 csdn
 https://me.csdn.net/qq_35224503
+
+在Windows上 使用pycharm 创建虚拟开发环境以及配置镜像源
+----------------------------------------------------------------------
+python pip修改安装镜像源
+Mac 修改pip 镜像源
+
+进入根目录：cd ~/
+进入.pip目录  cd .pip
+如果不存在文件夹就新建mkdir .pip
+进入 cd .pip
+创建pip.conf文件 touch pip.conf
+修改：vim pip.conf
+暂时
+pip install xxx -i https://pypi.douban.com/simple
+永久修改内容：
+[global]
+index-url=http://mirrors.aliyun.com/pypi/simple/
+[install]
+trusted-host=mirrors.aliyun.com
+国内源：
+http://pypi.douban.com/ 豆瓣
+http://pypi.hustunique.com/ 华中理工大学
+http://pypi.sdutlinux.org/ 山东理工大学
+http://pypi.mirrors.ustc.edu.cn/ 中国科学技术大学
+阿里云 http://mirrors.aliyun.com/pypi/simple/
+豆瓣(douban) http://pypi.douban.com/simple/
+清华大学 https://pypi.tuna.tsinghua.edu.cn/simple/
+中国科学技术大学 http://pypi.mirrors.ustc.edu.cn/simple/
+
+pip install -i numpy https://pypi.tuna.tsinghua.edu.cn/simple
+----------------------------------------------------------------------
