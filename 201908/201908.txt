@@ -38,3 +38,15 @@ http://pypi.mirrors.ustc.edu.cn/ 中国科学技术大学
 清华大学 https://pypi.tuna.tsinghua.edu.cn/simple/
 中国科学技术大学 http://pypi.mirrors.ustc.edu.cn/simple/
 ----------------------------------------------------------------------
+
+https://blog.csdn.net/weixin_41571493/article/details/82695010
+
+https://blog.csdn.net/sudden2012/article/details/82810500
+
+【链接】[机器学习实战]K-近邻算法
+https://www.cnblogs.com/mantoudev/p/8785120.html
+
+【链接】K近邻(KNN)|算法实现
+https://blog.csdn.net/sudden2012/article/details/82810500
+
+
