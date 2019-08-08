@@ -52,10 +52,14 @@ https://blog.csdn.net/sudden2012/article/details/82810500
 ----------------------------------------------------------------------
 https://www.cnblogs.com/wilson-wu/p/8056860.html
 
+
+----------------------------------------------------------------------
+wxPython入门教程
+视屏:  https://www.bilibili.com/video/av47145230/?p=1
 代码 ： source_code_del.rar
-
-
-
+----------------------------------------------------------------------
+wendang
+https://docs.wxpython.org/wx.Notebook.html?highlight=wx.notebook#wx-notebook
 
 
 
