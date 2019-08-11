@@ -1,0 +1,3228 @@
+1、上课方式
+基础理论部分——录播
+实践部分——直播
+
+“预习+复习”的模式
+预习：录播视频
+复习：直播视频：
+
+2、上课纪律
+（1）空杯心态
+（2）100%热情投入：至少30次课，时间宝贵
+（3）坚持不懈，一定要有信心
+（4）保持互动：1是 0否
+（5）人之所以痛苦，在于追求错误的东西
+
+3、经验
+目标：找大数据工作
+方法：找猎头？求职网站？群里小伙伴互相介绍、内推？班主任老师——都属于渠道问题
+策略：你准备好了么？
+       准备什么？
+       1) 简历——硬件：创造机会
+       2) 修养——软件：把握机会
+						工作前：先讲故事，再谈灵魂
+						工作后：优化灵魂，讲新故事
+
+4、开发语言：linux系统命令、python、java、c++、shell、sql、scala
+     开发工具：linux、hadoop、spark、tensorflow、pytorch
+     开发方式：shell、vim、IDE(idea)
+     
+     
+5、项目：《音乐推荐系统》，大家不要过于入戏太深
+=============================
+Hadoop生态圈
+
+尽可能不重复造轮子
+
+课程整体包含3个部分
+1、大数据平台（hadoop、spark）——hadoop生态圈
+2、服务器开发（日志流）
+3、数据挖掘（机器学习）
+=============================
+常见业务
+
+1、搜索
+		以前：人->内容
+		现在：人->服务
+
+大数据：人产生
+
+音乐->物品（item）-> itemid
+用户->人（user）-> userid
+
+大数据：用户多、物品多
+用户多：产生用户行为多（用户行为挖掘）
+物品多：产生大量的元数据（Metadata）
+
+元数据：物品的属性Schema（描述数据的数据）
+
+用户行为：通过监控实时获取
+物品元数据：
+
+
+2、广告
+
+搜索广告
+展示广告
+
+3、推荐
+
+学习重点：
+（1）检索/推荐系统定位
+（2）架构/框架层次思维
+
+迅捷流程图制作软件
+
+================================
+
+下节课计划：
+1、架构思路
+2、MapReduce——复习的思路
+3、简易的推荐系统
+
+预习内容：
+1、MapReduce、HDFS录播
+2、搭建环境hadoop-2.6.5
+
+===============================
+1、架构
+2、mapreduce（复习）
+（1）通常一个集群中，有这几个角色：master、slave、client
+（2）数据副本——数据高可用、容灾
+（3）mapreduce——分而治之思想
+（4）一个split和一个map是一对一的关系上
+（5）开发java相当于开发函数，开发python等脚本，相当于规定好标准输入和输出
+（6）hadoop1.0  ->  hadoop 2.0
+hadoop1.0：
+主：jobtracker、namenode
+从：tasktracker、datanode
+进程：worker
+
+hadoop 2.0
+主：ResourceMgr（RM资源调度）、ApplicationManager（AM任务调度）
+从：NodeManager（NM）
+进程：容器（Container）
+
+单机调试：
+cat input | mapper | sort | reducer > output
+
+实践总结：
+整体情况：hadoop-2.6.5
+   3个节点，1个master，2个slave
+   master：192.168.87.10
+   slave1：192.168.87.11
+   slave2：192.168.87.12
+   
+   页面观察：
+   HDFS页面：http://192.168.87.10:50070/dfshealth.html#tab-datanode
+   yarn管理页面：http://192.168.87.10:8088/cluster
+   
+   节点上，分发目标path：
+ /usr/local/src/hadoop-2.6.5/tmp/nm-local-dir/usercache/root/appcache/application_1543137200099_0011/container_1543137200099_0011_01_000001
+  
+杀死任务：
+yarn application -kill application_1543137200099_0011
+
+（1）wordcount
+（2）全排序
+       (a) 单reducer
+          第一个代码：mr_allsort_1reduce_python（base count）
+          第二个代码：mr_allsort_1reduce_python_2 （通过配置完成）
+					依赖于框架自身的sort功能
+					-jobconf "mapred.reduce.tasks=1"
+					一种方式：通过加一个很大的base count，保证key对齐，依赖字典序完成全局排序
+					另外一种方式：
+								-partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner \
+								# 利用该配置可以完成二次排序
+						    -jobconf  org.apache.hadoop.mapred.lib.KeyFieldBasedComparator \
+						    # 利用该配置可以完成key排序
+								-jobconf stream.num.map.output.key.fields=1 \
+								# 设置map分隔符的位置，该位置前的为key，之后的为value
+								-jobconf mapred.text.key.partitioner.options="-k1,1" \
+								# 选择哪一部分做partition
+								-jobconf mapred.text.key.comparator.options="-k1,1n" \
+								# 设置key中需要比较的字段或字节范围
+								-jobconf mapred.reduce.tasks=1
+       (b) 多reducer
+					mr_allsort_python（多桶）
+					适合大数据
+					    -jobconf mapred.reduce.tasks=2 \
+							-jobconf stream.num.map.output.key.fields=2 \
+							# 
+							-jobconf num.key.fields.for.partition=1 \
+							# partition key的值，用于分发
+							-partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner
+
+mapred.text.key.partitioner.options，这个参数可以认为是 num.key.fields.for.partition的升级版
+它可以指定不仅限于key中的前几个字段用做partition，而是可以单独指定 key中某个字段或者某几个字段一起做partition。
+
+（3）白名单——分发
+-file：把本地的文件分发到各个节点
+-cachefile：把hdfs的压缩文件分发到各个节点
+-archivefile：把hdfs的压缩目录分发到各个节点
+
+tar cvzf w.tar.gz white_list_1  white_list_2
+
+（4）压缩
+			mapred.compress.map.output：指定map的输出是否压缩。有助于减小数据量，减小io压力
+			mapred.map.output.compression.codec：指定map的输出压缩算法
+			
+（5）join
+		    -jobconf stream.num.map.output.key.fields=2 \
+				-jobconf num.key.fields.for.partition=1
+
+3、一个简易demo，检索系统
+
+==============================
+下节课计划：
+1、NLP（自然语言处理）
+			tfidf、关键词提取、lcs
+2、中文分词
+			jieba
+			jieba+pyweb ====> 远程分词服务--------------> Storm实时推荐
+			mapreduce、spark
+
+预习内容：
+1、mr的所有视频（包含今天的直播）
+2、vim
+
+conda安装：
+安装：conda create -n py27tf python=2.7 -y -c https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda install -y -c https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ tensorflow=1.2
+conda info -e
+source  activate py27tf
+pip install numpy
+================================
+相似度：
+相似度和距离之间关系：
+
+1、文本相似度：
+		1) 语义相似、但字面不相似：
+					老铁的个人简介
+					铁匠人物介绍
+		2) 字面相似、但是语义不相似：
+					我吃饱饭了
+					我吃不饱饭
+
+2、方案：
+		1) 语义相似：依靠用户行为，最基本的方法：（1）基于共点击的行为（协同过滤），（2）借助回归算法
+					歌神 -> 张学友
+		2) 字面相似：(1) LCS最大公共子序列 (2) 利用中文分词
+				老铁的个人简介 =>  老铁  / 的 / 个人 / 简介
+				token
+
+3 字面相似的问题解决：
+		1） 余弦相似度 cosine
+					举例：A(1,2,3) 
+									  B(2,3,4)
+					cosine(A,B) = 分子 / 分母
+					分子：A*B = 1*2+2*3+3*4 = 20
+					分母：|A|*|B| = 20.12
+									   |A| = sqrt(1*1+2*2+3*3) = 3.74
+										 |B| = sqrt(2*2+3*3+4*4) = 5.38
+					
+					BOW = bag of words
+
+4 tfidf
+			1) TF：词频
+			
+					关键词：在当前文章出现较多，但在其他文章中出现较少
+			
+			2) IDF：反文档频率
+									
+			score = TF * IDF
+			大 -> 小
+
+5、自动摘要：
+     1) 确定关键词集合（两种方法（a）top-10 （b）阈值截断 > 0.8 ）
+		 2）哪些句子包含关键词，把这些句子取出来
+		 3)  对关键词排序，对句子做等级划分
+		 4）把等级高的句子取出来，就是摘要
+			
+6、TFIDF实践实践：
+一共508篇文章
+（1）数据预处理：把所有文章的内容，全部收集到一个文件中
+			]# python convert.py input_tfidf_dir/ > idf_input.data
+（2）计算IDF：通过mr批量计算IDF
+
+7、LCS（和业务紧密关联）
+		目的：从字面角度衡量字面相似度的方法之一
+		item推荐，推荐列表——多样性
+
+			X，Y
+			abc = a b c ab bc ac abc  排列组合
+			
+			lcs(BC,BD) = lcs(BC,B) or lcs(B,BD) 
+			
+			X=<A, B, C, B, D, A, B>
+			Y=<B, D, C, A, B, A>
+			结果：BCBA，BCAB，BDAB
+			
+			score = 4
+			len(x) = 7
+			len(y) = 6
+			
+			sim(x,y) = 4 *2 / (6+7) = 0.615
+			
+			x=4 y=4  c=4
+			4/(4+4) *2 = 0.5 *2 = 1
+			
+			脸上长癣怎么办  脸上长红血丝怎么办      0.75
+			
+			脸上长怎么办 = 6*2/16 = 
+			
+			7+9 = 16 
+			
+			shell终端做快速计算：
+			]# echo $[60000*2/16]
+			]# echo $((60000*2/16))
+			
+=======================
+中文分词
+
+分词粒度：粗粒度、细粒度
+推荐场景：粗粒度
+搜索场景：细粒度——召回
+
+最基本的切词方法：
+最大长度匹配：前向、后向
+
+有向无环图——DAG
+
+C = 本田雅阁
+S = 本田 / 雅阁
+S = 本 / 田 / 雅阁
+
+目标：P(S|C) = P(S)
+
+p(本田雅阁 | 本田 / 雅阁) = 100%
+ 
+ log（ab） = log(a) + log(b)
+
+利用log的好处：
+1、防止向下溢出
+2、加法比乘法速度快
+
+一元模型（Unigram）——3个参数
+p(w1,w2,w3) = p(w1) p(w2) p(w3) 
+
+二元模型（Bigram）——3+6
+p(w1,w2,w3)  = p(w1)p(w2|w1)p(w3|w2)
+1 2 3 12 13 23 21 31 32
+
+三元模型（Trigram）
+p(w1,w2,w3,w4)  = p(w1)p(w2|w1)p(w3|w1,w2)p(w4|w2,w3)
+
+
+本田are you ready雅阁汽车
+
+HMM中利用viterbi算法，完成针对独立汉字序列的切词
+
+P=分子/分母
+分子：某一个词的词频
+分母：所有词的词频加和
+p-> log(p)
+
+广州/本田雅阁/汽/车
+
+汽/车
+
+]# git clone https://github.com/fxsjy/jieba.git
+
+实践：如何用mapreduce批量分词
+================================
+下周计划
+【理论】
+1、中文分词的HMM模型
+2、推荐算法
+
+【实践】
+1、中文分词的pyweb结合——页面
+2、基于mapreduce的物品推荐
+
+=======================
+实践：
+1、pyweb + jieba（基本的demo）
+]# python main_pg.py 9999
+
+2、pyweb + jieba（结合jieba中文分词）
+]# python fenci_page_web.py 9999
+
+理论部分：
+HMM：隐马尔可夫模型
+角色：收拾烂摊子的角色
+1) 生成方式
+2) 路径选择（viterbi算法）——>动态规划
+
+语言模型（1,2,3）
+二元语言模型 == 一阶马尔科夫模型
+
+马尔科夫模型有3类重要参数：
+1、状态
+2、初始概率
+    假设有100篇文章，
+    时光荏苒 30篇   -> 30 / 100
+    今天 10篇
+    开心 5篇
+    加班 1篇
+
+3、转移概率
+x x x x x x x x x x x x x x A B x x x x x A B x x x x  A C x x x x
+P(B|A) = 2/3
+P(C|A) = 1/3
+
+隐马尔科夫模型中有5类重要参数：
+1、状态，M个 = 4*20 = 80
+2、初始概率：M个
+3、转移概率：M*M
+4、发射概率：M*N
+5、观察，N个 = 2000
+
+总共的参数量
+
+中文分词：
+
+prob_start：初始概率
+prob_trans
+prob_emit
+
+
+广州塔  n
+
+<B,n><E,n>
+
+<B,n>
+
+HMM
+3个状态
+3个观察
+
+P(S1,S2,S3,O1,O2,O3) 联合概率
+= P(S1) * P(O1|S1) * P(S2|S1) ***  **
+
+O =南京市长江大桥
+S1= 南京市 长江 大桥
+S2= 南京 市长 江大桥
+
+P(S|O) = P(S, O)
+
+实践：
+1、利用中文分词完成倒排索引
+
+(1) map得到正排（不需要reduce）
+name -> token token token
+
+(2) map
+
+name -> token token token
+
+token1 -> name
+token2 -> name
+token3 -> name
+
+reduce(聚合)
+token1 -> name name name
+
+token ^B score ^A token ^B score
+
+有t个O，有1个S
+
+p(O1:t, St)
+
+L=0->M
+
+At(K) = sum(At-1(L) * P(s=K|o=L) * P(o=Ot|K))
+
+===========================
+推荐算法
+1、基于内容推荐Content Based
+2、基于行为推荐Collaboration Filtering
+     User Based
+     Item Based
+     
+推荐场景，序很关键，大部分的场景目标是为了得到序，而不是具体分数
+
+实践：协同过滤
+实践：给定一个item，推荐相关的item集合（II）
+
+（1,2,3）->（1/3.7, 2/3.7, 3/3.7）
+
+分母：sqrt（1^2+2^2+3^2） = sqrt（14）
+
+
+
+userid1 => A B C D
+ab ac ad bc cd bd
+
+userid2 => A B E F
+ab ae af be bf ef
+
+1、倒排式
+
+2、分块式
+UI  -> M
+IU -> MT
+UU=UI * IU
+目标：得到UU矩阵
+
+===============================
+下周预告：
+1、分块，基于内容
+2、分类算法——NB->逻辑回归算法
+
+==================================
+分类算法：
+1、NB算法——打基础
+2、评估方法
+
+性别识别：（男、女）——二分类（01问题）
+X-》人
+Y-》男 或 女
+
+特征：身高、体重、肤色、音色。。。。
+
+机器学习
+
+幼儿园教育小朋友
+0：老虎不能随便摸
+1：小狗随便摸
+
+狮子：90%的概率不能摸
+
+泛化能力
+
+文章分类（军事、体育、科技）——》三分类
+类数>2个为：多分类
+
+LR——》二分类
+Softmax——》多分类
+
+文章分类：
+特征：分词、关键词
+
+机器学习-》目的得到一个好的模型（用来做预测）
+1、一个的好模型 = 好算法 = 好老师
+2、一份好的数据 = 训练集 = 好教材
+
+好模型  ？= 复杂模型
+1、实现问题：复杂模型通常和开销有一定正比例关系
+2、过拟合：对于训练集学习的太过深刻，缺少泛化能力，对测试数据预估效果差
+
+评估方法（评估模型效果）：PR，ROC，AUC
+
+==============================
+NB朴素贝叶斯算法
+
+P(X|Y) = P(X,Y)/P(Y)
+P(X,Y) = P(X|Y)P(Y)
+P(X,Y) = P(Y|X)P(X)
+
+P(X|Y) = P(Y|X)P(X)/P(Y)
+
+p(yi|X) = P(yi)p(X|yi)/P(X)
+Y = 表示类别集合{军事0、财经1、体育2}
+yi = 表示第i个类别
+X = 一篇文章
+xi = 文章中的某一个词
+P(yi)：先验概率
+假设有100篇文章(训练集)，其中50篇是军事，30篇是财经，20篇体育
+P(y=军事) = 50/100
+P(y=财经) = 30/100
+P(y=体育) =20/100
+
+P(X) = 常数，所以接下来计算，公式缩减为
+p(yi|X) = P(yi)p(X|yi)
+
+X={军舰、大炮、航母}——军事
+
+p(X|y=军事) = p(x=军舰|y=军事)*p(x=大炮|y=军事)*p(x=航母|y=军事)
+前提：独立同分布——》朴素贝叶斯
+
+p(xj|yi) 的统计2种方法：
+第一种（文档PPT）：
+		分子：军事类文章中包含“谷歌”这词的文章个数
+		分母：军事类文章个数
+		P(x=谷歌|y=军事) = 分子 / 分母
+第二种（实践代码）：
+		分子：军事类文章中包含“谷歌”这个词的个数
+		分母：军事类文章中所有词的个数
+		P(x=谷歌|y=军事) = 分子 / 分母
+
+{军事0、财经1、体育2}
+p(y=0|X)  = 90%
+p(y=1|X)  = 1%
+p(y=2|X)  = 9%
+后验概率
+
+二分类评测：混淆表，混淆矩阵
+
+一个好的模型：既要求准确，又要求召回
+
+实践：朴素贝叶斯
+第一步：格式转换，生成训练集和测试集
+python DataConvert.py data/ nb_data
+第二步：利用训练集，得到模型
+python NB.py 1 nb_data.train model
+
+P(x=谷歌|y=军事)    =  ClassFeaDic——》（最大似然）——》ClassFeaProb
+P(y=军事)：先验概率：ClassProb
+
+第三步：利用测试机，评估模型效果
+python NB.py 0 nb_data.test model out
+
+============================
+2、评估方法：混淆矩阵——PR，ROC，AUC
+
+
+一篇军事 0.6  0.8   0.9
+
+阈值thd=0.85
+
+0.0  0.01 0.02 .....  0.1  0.2 0.3 0.4    >>>>>                1.0
+
+无图形：
+]# cat auc.raw | sort -t$'\t' -k2g  | awk -F'\t' '($1==-1){++x;a+=y}($1==1){++y}END{print 1.0 - a/(x*y)}'
+
+x = 11
+a = 2
+y = 2
+
+x：表示负样本的个数M=50
+y：表示正样本的个数N=20
+a：错误的累加
+
+x*y = M*N = 1000  <xi, yj>
+如果xi在yj前面，a不累计
+如果xi在yj后面，a累计
+a/(x*y) : 错误率
+1-a/(x*y)：正确率
+
+有图形：
+]# python plot_roc.py auc.raw 
+
+=======================================
+1、LR逻辑回归
+
+二分类(LR)：model -> 0/1
+多分类(Softmax)：model -> 0/1/2...
+
+评估方式：PR曲线——确定阈值（人工设定）
+
+0.6 0.9
+thd=0.98
+ROC、AUC：负样本排在正样本前面的概率
+
+y=wx+b
+y：因变量
+x：自变量
+w：权重
+b：偏置
+
+w，b是模型：我们目标要得到，
+
+性别识别：身高、体重、头发长短、音色
+x=一个人（样本）
+w=[0-1]
+x1= 0.7 = w1
+x2 = 0.6 = w2
+x3 = 0.1 = w3
+x4 = 0.8 = w4
+
+
+w1x1+w2x2+...+wnxn + b= wx
+w：权重向量
+x：样本[x1,x2....,xn]
+b=0
+
+b=-0.3
+b=+0.2
+
+偏置：整体的偏向
+
+f(x)=y=wx
+
+w
+
+（w1x1-y1）^2
+（w2x2-y2）^2
+...
+（wnxn-yn）^2
+
+二分类问题
+
+
+
+
+（w1x1-y1）^2
+
+未知数：w1
+
+导数=2(w1x1x1-x1y1)
+
+目标：p(y=1|x) = wx
+
+wx 值域(-无穷，+无穷)
+p值域[0-1]
+
+p(y=1|x) = exp(wx)
+exp(wx) (0，+无穷]
+
+p(y=1|x) / （1 - p(y=1|x)）  = exp(wx)
+
+p(y=0|x) = 1 - p(y=1|x)
+
+p(y=1|x) = 1/(exp(-wx) +1)
+
+导数的维度和权重保持一致！！！
+
+z=f(x,y)
+梯度方向是让f(x,y)函数快速变大的方向
+梯度反方向是让f(x,y)函数值快速变小的方向
+
+x——>y(真实值)
+
+f(x) = sigmoid(wx)
+w1：随机初始化——》f(x) ：预测值
+计算一下梯度
+
+误差=预测值-真实值
+
+target存储真实label标签列表
+m：样本的个数=100
+n：维度=3（2个w+1个b）
+
+=========================
+下周预告：
+1、随机梯度下降SGD
+2、多分类——Softmax
+3、过拟合、欠拟合
+4、排序模型应用到推荐项目上
+5、聚类算法
+
+===========================
+二分类
+批量梯度下降BGD——慢，但是效果好，实用性差
+随机梯度下降SGD——效果不是最优，但是速度快，实用性相对好
+工业中届中，常用MBGD，小批量梯度下降，Mini-batch
+
+多分类：Softmax，普遍性
+
+逻辑回归是多分类的一种特殊形式
+
+二分类：
+p(y=1|x) = sigmoid(wx)
+p(y=0|x) = 1 - p(y=1|x)
+w, b
+只需要学习到一组w,b（权重）就可以了
+
+多分类：{1,2,3}
+p(y=1|x) -》 w1  = e^w1x
+p(y=2|x) -》 w2  = e^w2x
+
+
+X -> 1,2,3
+
+分母=(e^w1x + e^w2x + e^w3)
+p(y=1|x) = e^w1x / 分母 = p1
+
+y=1 w1=[0.2,0.7,0.0,0.3,0.1,0.4,0.5]
+y=2 w2=[0.1,0.3,0.2,0.3,0.0,0.4,0.5]
+y=3 w3=[0.1,0.0,0.2,0.3,0.1,0.4,0.0]
+
+L2不会产生稀疏矩阵
+会防止过拟合
+
+L1会产生稀疏矩阵
+（1）系统实现：可大大减少参数存储空间
+（2）针对性强，泛化能力好：
+ （3）防止过拟合
+============================
+正则化项（可选项）
+
+什么都不加：0.77
+L1：||w||  范数——lasso ——0.82
+L2：||w^2||  范数——ridge——0.81
+L1+L2：0.82
+
+100个特征
+每一个特征都对应着各自的w
+
+性别识别：
+1、身高   w=0.1
+2、体重   w=0.2
+3、肤色
+4、声音——强特征   w=0.8
+5、头发
+6、带眼镜——没有区分能力   w=0
+
+男，女
+身高175 180 192  164
+
+auc？？？
+1 score
+
+身高
+决策树：用信息增益（信息熵）来选择特征
+
+假设没有任何约束
+假设加约束 L1约束   ||w|| <=1    约束，条件：|w1+w2| <=a
+ L2约束   ||w^2|| <=1    w1^2 + w2^2 <= 1
+
+w1：身高   10   -> 1   0.1
+w2：体重   100 ->10  1
+
+x1 x2
+===========================
+
+欠拟合，过拟合
+
+
+样本数10000
+特征5000个->特征筛选，降维
+
+===================================
+实践：推荐系统demo
+推荐算法（cb+cf）
+回归算法（lr，sklearn——单机版的机器学习工具）
+
+
+
+===================
+加一个衔接——面试
+
+下周：
+
+进入生态的学习
+HDFS+YARN
+
+
+
+
+w1：100
+w2:10000
+
+w1：1
+w2:100
+
+x1 x2
+=============================
+推荐实践：
+1、数据预处理
+（1）用户画像数据：user_profile.data
+userid，性别，年龄，收入，地域
+（2）物品（音乐）元数据：music_meta
+itemid，name，desc，时长，地域，标签
+（3）用户行为数据：user_watch_pref.sml
+userid，itemid，该用户对该物品的收听时长，点击时间（小时）
+
+首先，将3份数据融合到一份数据中
+在pre_base_data目录中，执行]# python gen_base.py
+得到类似下面数据merge_base.data
+01e069ed67600f1914e64c0fe773094440903091011519女0-1810000-20000江西大美妞 大哲2013最新伤感歌曲网络歌曲DJ舞曲 大连翻译248大美妞,流行
+
+2、【召回】CB算法
+（1）以token  itemid  score形式整理训练数据
+利用jieba分词，对item name进行中文分词
+
+item
+name desc tag
+
+]# python gen_cb_train.py 
+得到如下数据：
+翻译,4090309101,0.561911164569
+
+（2）用协同过滤算法跑出item-item数据
+最后得到基于cb的ii矩阵
+
+（3）对数据格式化，item-> item list形式，整理出KV形式
+]# python gen_reclist.py
+类似如下数据：
+SET CB_5305109176 726100303:0.393048_953500302:0.393048_6193109237:0.348855
+（4）灌库（redis）
+下载redis-2.8.3.tar.gz安装包
+进行源码编译，执行make，然后会在src目录中，得到bin文件（redis-server 服务器，redis-cli 客户端）
+启动redis server服务：
+]# ./src/redis-server 
+
+然后换一个终端执行：]# ./src/redis-cli，连接服务
+
+接下来灌数据（批量灌）：
+需要安装unix2dos（格式转换）
+
+]# cat cb_reclist.redis | /usr/local/src/redis-2.8.3/src/redis-cli --pipe
+
+验证：]# ./src/redis-cli
+执行：
+127.0.0.1:6379> get CB_5305109176
+"726100303:0.393048_953500302:0.393048_6193109237:0.348855"
+
+3、【召回】CF算法
+（1）以userid  itemid  score形式整理训练数据
+]# python gen_cf_train.py 
+（2）用协同过滤算法跑出item-item数据
+最后得到基于cf的ii矩阵
+（3）对数据格式化，item-> item list形式，整理出KV形式
+]# unix2dos cf_reclist.redis
+（4）灌库
+]# cat cf_reclist.redis | /usr/local/src/redis-2.8.3/src/redis-cli --pipe
+
+4、【排序】Sklearn
+target_list：存储每个样本的label标签
+fea_row_list：存储样本行信息
+fea_col_list：存储样本列信息
+data_list：存储真实数据
+
+]# python lr.py data/a9a 
+
+接下来，把如何准备我们自己的训练数据
+进入pre_data_for_rankmodel目录：
+
+训练样本：
+label 一系列特征
+
+一系列特征：用户特征+物品特征（name）
+
+
+]# python lr_auc.py ../data/samples.data
+]# paste T.txt P.txt > auc.txt 
+
+
+============================
+下周预告：
+1、【系统】推荐系统与数据库整合，最终形成可视化demo
+2、面试、简历
+3、生态学习：Yarn&HDFS，Spark
+
+周日、周一 20:00
+
+
+yarn HDFS Hive Hbase  FLume Kafka Storm zookeeper SparkStreaming SparkSql
+
+=========================
+
+1、模型auc效果评测：
+model.predict 改成 model.predict_proba
+
+2、推荐系统demo流程
+	（1）解析请求：userid，itemid
+	（2）加载模型：加载排序模型（model.w，model.b）
+	（3）检索候选集合：利用cb，cf去redis里面检索数据库，得到候选集合
+	（4）获取用户特征：userid
+	（5）获取物品特征：itemid
+	（6）打分(逻辑回归，深度学习)，排序
+	（7）top-n过滤
+	（8）数据包装（itemid->name），返回
+
+验证：
+192.168.87.10:9999/?userid=00370d83b51febe3e8ae395afa95c684&itemid=3880409156
+
+================================
+简历，面试
+
+讲简历目的：
+（1）个人角度：提前做准备
+（2）课程角度：承上启下（算法->工程）
+
+大数据方向：
+（1）算法工程师——>rank model/推荐算法。。。
+（2）系统工程师——> 引擎，业务（LCS去重、地域。。）
+（3）数据分析师——>execl、sql、hive。。。。监控当前最火爆的物品(pv) page view，哪些物品点击率高(click/show)
+
+bias 
+
+
+
+圣诞节（场景），单身（用户画像），文艺片（用户行为偏好）
+
+为您推荐一些适合一个人在圣诞节看的xxx片
+
+userid-> item  item item item item
+
+user1 - t t t t
+user2 - t t t 
+user3
+
+user1  user2
+ii矩阵
+
+问题：100个物品，有千万级别的用户，页面展示最多10个物品，如果利用个性化思路，对用户完成物品推荐？
+
+千万级别的用户 -> 降维做聚类（1000类），每一个类别都是以虚拟的用户
+
+1000个用户，100个物品做推荐
+cf_reclist
+
+用户-> 属于哪一类 -> 每个类所对应的推荐候选
+
+分词工具
+item name -> token token token
+
+tfidf score
+1、时效性问题
+
+京东比较火
+
+我在京东买东西
+
+我 0.3
+在 0.0.1
+京东 0.2 -> 0.5
+买东西 0.4
+
+百度指数
+pyweb
+
+
+面试分享：
+1、千万不能说自己培训出来的
+2、个人技能里千万不要体现出学习、了解字样
+3、找工作策略，可以找一些普通公司先试试经验，积累后，再去心仪公司面试
+4、简历写的不要太多，留一些空间现场聊
+5、不要进入误区，完全依靠课程内容还不够，课程内容只是帮助大家完善一个项目和既能，面试还要考察基本功（数据结构、基础算法）
+6、面试的时候要听清问题
+7、建议要带简历，（1）出于礼貌（2）辅助描述
+8、聪明程度，迂回法
+9、时间把握，面试一个小时
+    （1）自我介绍 20分钟
+    （2）中间环节，尽可能用项目占满
+
+============================
+明天预告：
+生态：HDFS、YARN、Spark
+
+
+《大话数据结构》：数据结构、基础算法
+
+转行
+（1）工作内容结合起来
+（2）	项目引导
+（3）坦诚一些，薪水上面不要纠结太多，平台最重要
+（4）转行越早越好
+（5）迂回战术
+
+=============================
+HDFS（1.0录播，2.0）
+一、HDFS1.0
+1、HDFS有3个组件（Namenode、SecondNamenode、DataNode）
+		Namenode（主节点，master，只有一个，所以有单点故障的风险）中存储一些信息（元数据），有2种映射关系数据：
+		（1）已知路径Path（HDFS上的）-> blockid list列表
+		（2）blockid数据块 -> datanode节点地址
+
+			元数据是存在内存中
+			
+			元数据的持久化（磁盘上fsimage），目的：避免数据丢失
+			fsimage：元数据的镜像文件
+			之久机器重启的时候加载fsimage
+			
+			元数据持久化过程（SNN）：
+			内存 -> edit logs(磁盘上) -> fsimage
+			
+			SNN（SecondNamenode）存在的意义：备份、数据恢复
+			Namenode 和 edit logs关系：
+			Namenode需要把每一次改动都存在edit log中，整个过程谁来主动推进的？
+			（Datanode与Namenode之间的心跳机制）
+
+			除了单点问题之外，还有那些问题：
+			（1）不适合存储太多小文件，导致block太多，内存可能放不下
+
+		DataNode（从节点，slave，多个机器）
+		（1）block数据块 -> 真实数据
+			心跳机制
+			副本机制，默认3个副本，作用：数据冗余做到数据高可用的目的，利用空间换取高可用
+			本地化原则（就近原则），MapReduce：主Jobtracker（Namenode） 从tasktracker（DataNode）
+
+2、可靠性保证
+		（1）数据校验：
+		目的：保证完整性（通过crc32校验算法）
+		
+		在整个数据传输过程中，数据需要校验几次？
+		1）client给DataNode写数据时候：要针对所写的数据，每个检查单位（512字节），
+						创建一个单独校验码（crc32），将数据和校验码一起发送给DataNode
+		2）DataNode接收数据的时候：用同样加密算法生成校验码，并校验
+		
+			在后台有一个扫描进程：DataBlockScanner：
+			一旦检测出问题的block，通过心跳，通知NN，于是NN让DN进行修复（拷贝一个无问题的备份）
+		
+		（2）可靠性保证
+			1）心跳机制
+			2）多副本机制
+			3）crc32数据校验
+			4）SNN：保证元数据避免丢失
+			5）回收站(.Trash目录)
+			6）报告
+						]# hdfs fsck /passwd -files -blocks -locations
+			7）快照：备份，有助于快速还原
+			
+3、HDFS特点：write-once read-many
+		不适合随机读，原因：无法被系统做大寻址方面优化（预读）
+				
+4、同步与异步
+			同步：速度慢，但能保证全局数据一致性
+			异步：无法保证全局数据一致性，但是速度快
+
+5、数据本地化：
+		Namenode和Jobtracker是可以部署不同机器（可以拆开）
+		Yarn（RM、AM）、HDFS2.0
+		
+		hadoop text   除了可以看明文，也可以看压缩文件
+		              cat   看明文
+
+===================================
+HDFS2.0
+一、HDFS HA
+1、HA：高可用：解决单点故障问题，虽然1.0里面有SNN，但是不可靠（使用两个NN，一个active，另一个Standby）
+			如何保证两个Namenode的数据一致性，DataNode要对两个NN同时发送心跳
+2、DataNode要对两个NN同时发送心跳，目的保证一致性，但是为什么还需要JN？
+		原因：两者保证数据类型不同
+		1）文件 -> block（JN）
+		2）block -> DN（DataNode的心跳）
+
+3、HDFS2.0里面引入zookeeper，zookeeper目的：协调分布式集群中各个节点工作有序运行，完成故障转移
+4、在2.0中，ZKFC是一个进程，和NN部署在同一个机器上，ZKFC目的：负责对自己管辖之内的NN进行健康检查，
+			ZKFC会在zookeeper上注册一个临时节点，
+			目的用于监控NN，一旦NN挂掉，相对应的临时节点消失，接下来开始选主（申请锁）流程
+
+5、JN通常配置成奇数个（2n+1），如果n+1个数据是一致的，那么数据就能确定下来
+6、JN目的：让activeNN和StandbyNN保持数据同步（文件 -> block）
+7、JN一种选择是NFS，另一种选择是QJM
+			NFS：需要额外的磁盘空间
+			QJM：不需要额外的磁盘空间
+8、QJM：最低法定人数管理机制
+			原理：用2n+1台机器存储edit log，每次写数据操作属于大多数（n+1）时候，返回成功，保证高可用
+			QJM本质也是一个小集群，好处：
+			1）不需要空间
+			2）无单点问题
+			3）不会因为个别机器延迟，影响整体性能
+			4）通过简单的系统配置就可以实现
+9、NN和JN通常不在一台机器上
+     FC和NN在同一台机器上
+     RM（Yarn中的资源管理器，相当于1.0中的jobtracker的部分功能）和NN在同一台机器
+     zookeeper通常是单独维护的一套独立集群
+
+二、HDFS联邦
+		目的：减轻单一NN压力，将一部分文件转移到其他NN上管理
+
+		如果集群中某一个目录比较大，建议用单独的NN维护起来
+		横向扩展，突破了单独NN的限制
+		命名空间精简
+		
+		每一个NN共享所有的DN数据
+		联邦的本质：元数据管理（NN）和存储（DN）进行解耦，但是实际情况是：数据的存储仍然是共享的
+		
+三、快照：数据备份、灾备、快速恢复
+		快照本质：也占空间（仅仅记录了block列表和大小而已，并不涉及数据本身的复制）
+		某个目录的某一时刻的镜像
+		快照创建的过程非常快，瞬间完成，高效
+
+四、缓存：集中式缓存（不局限具体的机器cpu和操作系统层面上的优化）
+		缓存管理对于重复访问的文件很有用
+		优点：访问速度快
+
+五、权限控制ACL
+		类似于linux系统acl功能
+
+		张三（技术部）：zhangsan_dir
+		
+		李四（产品部）：lisi_dir
+		
+		rwxr------
+		自己-组-其他
+
+		setacl单独给李四开权限
+		
+=======================
+实践：
+参考文章：https://www.cnblogs.com/selinux/p/4155814.html
+【192.168.87.150】master1：NN ZKFC RM
+【192.168.87.151】master2：NN ZKFC RM
+【192.168.87.155】slave1：DN NM ZK JN
+【192.168.87.156】slave2：DN NM ZK JN
+【192.168.87.157】slave3：DN NM
+【192.168.87.158】slave4：DN NM ZK JN
+
+=============================
+下周预告：
+1、Yarn
+2、Spark
+
+cf 算法，mapreduce——》spark
+scala为主，python
+
+
+===========================
+HDFS：分布式文件系统
+
+一、Yarn
+1、定位：分布式操作系统
+		作用：资源整合，为了让系统资源利用最大化，
+							在同一套硬件集群上同时可以运行MR任务、Spark任务、Storm任务
+
+2、RM整个Yarn的主：资源管理系统
+
+RM负责1.0中jobtracker中的资源分配
+AM负责任务调度：应用程序Master（本质上也是一个普通的Container）
+
+RM有一个可插拔的调度组件Scheduler（可插拔，有很多选项）
+NM：Tasktracker的角色，接收RM的请求，分配Container资源，通过心跳给RM汇报监控，并且管理当前节点内部的资源利用情况
+
+container：是个进程，NM来启动、并且监控Container，通过心跳上报给RM
+
+1.0
+jobtracker：资源分配、任务调度（包含监控）
+Tasktracker
+
+2.0
+资源分配——>RM
+任务调度——>AM
+
+3、RM、AM本质上其实就是对jobtracker的绝对权力的肢解
+4、Container资源：
+hadoop1.0：资源成为slot，map slot和reduce slot
+slot当做小区停车位，普通小轿车，大型卡车
+slot是资源调配单元，slot决定cpu和内存大小
+hadoop1.0一个节点默认启动两个map slot和reduce slot
+slot只是一个令牌或者是一种许可证，只是一个逻辑的概念
+
+Map slots总数=集群节点数×mapred.tasktracker.map.tasks.maximum
+Reducer slots总数=集群节点数×mapred.tasktracker.reduce.tasks.maximum
+
+设定一个slot代表2G内存和1个CPU
+一个任务只需要1G内存，1个CPU，由此出现，资源碎片，资源利用率过低
+另一个任务需要3G内存，出现抢占其他任务的资源，集群利用率过高
+
+1个节点（机器），16个cpu、32G内存，机器上配置了4个slot
+
+一个slot等于4个cpu、8G内存（等量划分）
+
+hadoop2.0：资源称为container（想象成乐高玩具）
+
+一个机器有多少个container？
+container的数量=min(2*cores，1.8*disks、总内存 / 最小容量)
+
+我们要对container配置什么参数？（最小容量）
+
+最小容量=container最小的容量大小，可以配置
+
+Container分为两类：CPU和内存，这两类container会分布在不同节点上，位置随机
+
+yarn里面core概念和真实cpu是等同的么？（不一样的，yarn里的core是虚拟）
+
+container相当于是一个进程
+
+1.0、Mapreduce成为一个job
+2.0、Mapreduce称为application
+
+Mapreduce——application
+Spark——application
+Storm——application
+
+5、容错：
+		（1）RM挂怎么办？
+		（2）NM挂了怎么办？
+						NM有AM：整个任务都挂了
+						NM上没有AM：整个任务不会挂
+		（3）AM挂了怎么办？
+============================
+Spark
+1、Spark是一个计算框架
+		MR是批量计算框架，Spark-Core是批量计算框架
+		Spark相比MR速度快，MR作为一个job，在中间环节中结果是落地的（会经过磁盘交换），Spark计算过程中数据流转都是在内存的（减少了对HDFS的依赖）
+
+		MR：多进程模型（缺点：每个任务启动时间长，所以不适合于低延迟的任务
+																优点：资源隔离，稳定性高，开发过程中不涉及内存锁（互斥锁、读写锁）的开发）
+		Spark：多线程模型（缺点：稳定性差
+		                                优点：速度快，适合低延迟的任务，适合于内存密集型任务）
+
+		一个机器节点，所有的任务都会运载jvm进程（executor进程），
+		每一个进程包含一个executor对象，在对象内部会维持一个线程池，提高效率，每一个线程执行一个task
+
+2、Spark的运行模式：
+			（1）单机模式：方便人工调试
+			（2）Standalone模式：自己独立一套集群(master/client/slave)，缺点：资源不利于充分利用
+			（3）Yarn模式：
+							1）Yarn-Client模式：Driver运行在本地
+										适合交互调试
+							2）Yarn-Cluster模式：Driver运行在集群（AM）
+										正式提交任务的模式（remote）
+
+==========================
+明天预告：
+1、Spark Core
+2、Spark实践
+		（1）实践，用spark替代mr完成cf（自己开发）
+		（2）Mllib，LR、NB
+		（3）中文分词，webpy+mr：spark结合起来，完成批量中文分词（jieba）（pyspark python）
+
+
+Yarn+Spark
+
+Spark+Hive+Hbase
+
+Storm zk flume kafka
+
+===================================
+
+
+mapreduce map reduce
+
+spark 算子整体分成两类：transformations 和 action
+
+user  item  score
+user  item  score
+user  item  score
+
+user -> item:score item:score item:score
+
+union unionall
+
+1 2 3
+2 3 4
+
+union: 1234
+unionall：123234
+
+窄依赖
+宽依赖
+
+1、每一个进程包含一个executor对象，一个executor包含一个线程池，每个线程执行一个tasks		
+			线程池好处：省去了进程频繁启停开销
+			Task并发度概念：
+						每一个节点可以启动一个或者是多个executor进程
+						每一个executor进程有多个core组成，每一个core一次只能执行一个task
+
+2、内存划分：
+		（1）【20%】：exectution：执行内存
+					    join、groupby这类算子涉及内存，shuffle数据都会缓存在这个内存区，如果内存满，把数据写到磁盘（spill）
+		（2）【60%】：Storage：存储cache、presist、broadcast数据
+		（3）【20%】：留给程序自己
+
+和spark版本有关：
+1.6.0之前的版本，每个类的内存是相互隔离，导致了executor的内存利用率不高，只能使用者自己调整参数来优化内存
+1.6.0以上的版本，execution和storage内存是可以相互借用的，减少了OOM（out of memory）的情况发生
+
+为了提高内存利用率，尽可能复用rdd
+
+cache和persist：
+
+实践内容：
+1：idea IDE，完成scala开发
+		（1）wordcount
+		（2）统计每个user收听item的列表
+
+
+spark版本：1.6.0
+scala版本：2.10.5
+=======================
+下周计划：
+1、Spark实践
+		（1）实践，用spark替代mr完成cf（自己开发）
+		（2）Mllib，LR、NB
+		（3）中文分词，webpy+mr：spark结合起来，完成批量中文分词（jieba）（pyspark python）
+
+2、Hive
+
+
+A（大）：
+1001  java aaa
+1002 hadoop bbb
+1003 spark
+
+B（小）——内存（字典维护dict）
+1001 aaa
+1002 bbb
+
+宽依赖、窄依赖
+spark core只有union算子，将两个集合merge起来
+
+============================
+
+（1）workcount 
+（2）针对UI矩阵，以user为key，对其历史行为列表进行聚合
+
+user item score
+
+item user score
+item user score
+item user score
+
+
+
+user -> item item  item
+
+(user, (item1 score1))
+(user, (item2 score2))
+
+(user,((item1 score1) (item2 score2)))
+
+0 1 2 3 4
+
+0 1 2 3 4 5
+（3）协同过滤
+
+
+百G，输入UI
+
+mapreduce 归一、展开、合并
+8小时
+spark 4-5分钟
+
+（4）pyspark
+]# pyspark wordcount_1.py 
+]# pyspark wordcount_2.py 
+]# pyspark wordcount_3.py
+
+分词：
+]# pyspark wordseg_jieba_cluster.py --py-files jieba.tgz
+]# pyspark wordseg_jieba_cluster_2.py 
+
+============================
+Hive理论
+1、Hive是什么？一个sql解析引擎，将SQL解析成MR，Hive本质就是MR
+2、Hive不存数据的，数据实际存在HDFS上，元数据基本上都存在mysql上
+3、Hive内容是读多写少，不支持数据的改写和删除
+4、Hive的SQL和传统SQL区别：
+			可扩展性：用户自定义函数
+					1）UDF：用户自定义普通函数，例：map，一对一
+					2）UDAF：用户自定义聚合函数，例：groupByKey，多对一
+					3）UDTF：用户自定义表生成函数，例：flatMap，一对多
+			数据检查：
+					HQL（hive）：读时模式
+							加载load数据的速度非常快，加载过程中不需要对数据解析，仅仅涉及到文件的复制和移动
+							但读的时候慢
+					SQL（传统）：写时模式
+							加载数据的时候速度非常慢，但是读的时候快
+5、Hive体系架构
+		1）用户接口Cli
+		2）语句转化Driver：将SQl转换成MR
+		3）数据存储：元数据（mysql）+实际数据（HDFS）
+				默认derby：本地，单用户模式
+				建mysql：多用户模式（本地+远程）
+
+6、Hive数据管理：
+		1）Table：内部表
+		2）External Table：外部表
+		3）Partition：辅助查询，缩小查询范围，加快数据检索速度
+		4）Bucket：桶，reduce，采样，控制reduce的数量
+			
+7、Hive数据类型
+		1）原生类型int string bool double
+		2）复合类型
+
+8、hive优化（mapreduce优化）
+		1）map优化
+				优化并发个数
+				block大小会影响并发度
+				hive.map.aggr=true ，相当于开启Combiner功能
+				
+		2）reduce优化
+				优化并发个数
+				set mapred.reduce.tasks=10
+
+		3）mapreduce出现痛点：只有一个reduce的情况
+				 1、没有group by
+				 2、order by，建议用distribute by和sort by来替代
+							order by：全局排序，因此只有一个reduce，当输入数据规模较大时，计算时间消耗严重
+							sort by：不是全局排序，如果用sort by排序，并且设置多个reduce，
+														 每个reduce输出是有序的，但是不保证全局排序
+							distribute by：控制map端的数据如果拆分给redcuce，可控制分区文件的个数
+							cluster by：相当于distribute by和sort by的结合，但是只默认升序排序
+							
+							例子1：select * from TableA distribute by userid sort by itemid;
+
+							例子2：
+									select * from TableA distribute by itemid sort by itemid asc；
+									select * from TableA cluster by itemid;
+					3、笛卡尔积
+							使用join的时候，尽量有效的使用on条件
+
+			4）mapreduce出现痛点：如何加快查询速度（横向尽可能多并发，纵向尽可能少依赖）
+					1、分区Partition
+					2、Map Join：指定表是小表，内存处理，通常不超过1个G或者50w记录
+					3、union all：先把两张表union all，然后再做join或者group by，可以减少mr的数量
+								union 和 union all区别：union相当记录合并，union all不合并，性能后者更优
+					4、multi-insert &  multi group by
+					5、Automatic merge：为了多个小文件合并
+					6、Multi-Count Distinct
+								一个MR，拆成多个的目的是为了降低数据倾斜的压力
+					7、并行执行：set hive.exec.parallel=true
+
+		 5）mapreduce出现痛点：如何加快join操作
+					1、语句优化：			
+									多表连接：如果join中多个表的join key是同一个，则join会转化为单个mr任务
+									表的连接顺序：指定大、小表
+												Hive默认把左表数据放到缓存中，右边的表的数据做流数据
+				  2、如果避免join过程中出现大量结果，尽可能在on中完成所有条件判断
+			   
+			6）mapreduce解决数据倾斜问题
+					1、大小表关联
+					2、大大表关联
+			
+			
+=====================
+明天预告：
+Hive实践
+1、数据输入、输出
+2、用户自定义函数
+
+=======================
+
+Hive实践：
+一、安装：
+apache-hive-1.2.2-bin.tar.gz
+修改以下两个文件：
+1、hive-site.xml
+将${system:java.io.tmpdir}统一换成/hive
+将${system:user.name}统一换成root
+
+在vim命令行模式下进行统一替换
+%s/${system:java.io.tmpdir}/\/hive/g
+
+将以下部分贴在配置文件尾部：
+<property>
+      <name>javax.jdo.option.ConnectionURL</name>
+      <value>jdbc:mysql://localhost:3306/hive?createDatabaseIfNotExist=true</value>
+      <description>JDBC connect string for a JDBC metastore</description>
+  </property>
+  <property>
+      <name>javax.jdo.option.ConnectionDriverName</name>
+      <value>com.mysql.jdbc.Driver</value>
+      <description>Driver class name for a JDBC metastore</description>
+  </property>
+  <property>
+      <name>javax.jdo.option.ConnectionUserName</name>
+      <value>root</value>
+      <description>Username to use against metastore database</description>
+  </property>
+  <property>
+      <name>javax.jdo.option.ConnectionPassword</name>
+      <value>111111</value>
+      <description>password to use against metastore database</description>
+  </property>
+
+2、mysql驱动jar包
+mysql-connector-java-5.1.41-bin.jar
+放到hive解压目录lib目录下就可以了
+
+3、安装mysql
+yum install mysql-server mysql
+
+初次需要设置用户名和密码
+]# mysqladmin -u root password 
+
+保证可以用用户名和密码登录：
+]# mysql -uroot -p111111
+
+启动mysql：
+]# systemctl start mariadb
+
+检查mysql是否启动：
+]# netstat -antup |grep 3306
+
+4、hive-env.sh
+设置HADOOP_HOME环境变量
+
+===========================
+
+二、数据集：
+movieLens数据集：
+http://files.grouplens.org/datasets/movielens/ml-latest-small.zip
+
+（1）ratings.csv
+userid，movieid，rating，timestamp
+
+（2）movies.csv
+movieId,title,genres
+
+1、创建表：
+内部表：
+]# cat create_rating_table.sql 
+CREATE Table rating_table
+(userid STRING,
+movieid STRING,
+rating STRING,
+ts STRING
+)
+row format delimited fields terminated by ','
+stored as textfile
+location '/rating_table'
+
+命令行创建：]# hive -f create_rating_table.sql 		
+
+CREATE Table movie_table
+(movieid STRING,
+title STRING,
+genres STRING
+)
+row format delimited fields terminated by ','
+stored as textfile
+location '/movie_table'
+
+表的关联操作（join）：
+
+			
+select B.userid, A.title
+from movie_table A
+join rating_table B
+on A.movieid = B.movieid
+limit 10;
+			
+从本地批量往table中灌数据：
+LOAD DATA LOCAL INPATH '/root/9_codes/hive_test/ml-latest-small/ratings.csv' OVERWRITE INTO TABLE rating_table
+
+从HDFS批量往table中灌数据：
+LOAD DATA INPATH '/ratings.csv' OVERWRITE INTO TABLE rating_table_tmp
+
+LOAD DATA LOCAL INPATH '/root/9_codes/hive_test/ml-latest-small/ratings.csv' OVERWRITE INTO TABLE rating_table_ex
+
+创建新表：
+
+create table behavior_table as
+select B.userid, A.title, B.rating
+from movie_table A
+join rating_table_ex B
+on A.movieid = B.movieid
+limit 10;
+
+从Hive表里，把数据批量导出
+（1）导出到本地
+INSERT OVERWRITE local directory '/root/9_codes/hive_test/tmp_data/behavior_data' select userid, title from behavior_table;
+
+（2）导出到HDFS
+INSERT OVERWRITE directory '/behavior_data' select userid, title from behavior_table;
+
+
+2、分区表Partition
+
+LOAD DATA LOCAL INPATH '/root/9_codes/hive_test/ml-latest-small/2008-08.data' OVERWRITE INTO TABLE rating_table_p partition(dt='2008-08');
+LOAD DATA LOCAL INPATH '/root/9_codes/hive_test/ml-latest-small/2003-10.data' OVERWRITE INTO TABLE rating_table_p partition(dt='2003-10');
+
+查看当前分区数：
+hive> show partitions rating_table_p;
+
+3、Bucket桶
+set hive.enforce.bucketing=true;
+
+hive> desc formatted rating_table_b;
+
+灌入数据：
+FROM rating_table_ex
+INSERT OVERWRITE TABLE rating_table_b
+SELECT userid, movieid, rating;
+
+验证：采样功能：
+SELECT * FROM rating_table_b tablesample(bucket 1 out of 8 on id);  
+
+SELECT * FROM rating_table_b tablesample(bucket 1 out of 8 on id) limit 10;  
+
+4、用户自定义函数
+UDF
+UDAF
+UDTF
+
+（1）UDF，
+hive> add jar /root/IdeaProjects/hive/target/hive-1.0-SNAPSHOT.jar;
+hive> create temporary function upper_func as 'Uppercase';
+hive> select movieid, title,upper_func(title) from movie_table limit 10;
+
+（2）UDTF：
+输入：1:0.1;2:0.2;3:0.3;4:0.4;5:0.5
+输出：
+1 0.1
+2 0.2
+3 0.3
+4 0.4
+5 0.5
+
+hive> add jar /root/IdeaProjects/hive/target/hive-1.0-SNAPSHOT.jar;
+hive> create temporary function explode_func as 'Expolde';
+
+select explode_func(data) from udtf_test_table;
+
+5、transform
+]# echo "aaa bbb ccc" | awk '{print $1, $2"_"$3}'
+]# cat 1.data | awk 'BEGIN{a=0}($0=="a"||$0=="g"){a+=1}END{print a}' 
+
+]# echo "aaa bbb ccc" | awk '{print $1"_"$2}'   
+]# echo "aaa bbb ccc" | awk -f transform.awk
+
+hive> add file /root/9_codes/hive_test/transform/transform.awk
+
+hive> select transform(movieid, title) using "awk -f transform.awk" as (uuu) from movie_table limit 10;
+
+使用python：
+
+(py27tf) [root@master transform]# vim transform.py 
+  1 import sys
+  2 
+  3 for line in sys.stdin:
+  4     ss = line.strip().split('\t')
+  5     print '_'.join([ss[0].strip(), ss[1].strip()])
+  
+hive> add file /root/9_codes/hive_test/transform/transform.py;
+  
+select transform(movieid, title) using "python transform.py" as (uuu) from movie_table limit 10;
+
+6、实现wordcount
+
+创建一张表，存所有文章：
+]# cat create_docs_table.sql 
+CREATE Table docs
+(data STRING
+)
+
+LOAD DATA LOCAL INPATH '/root/9_codes/hive_test/The_Man_of_Property.txt' OVERWRITE INTO TABLE docs;
+
+
+hive> add file /root/9_codes/hive_test/transform_wc/mapper.py;
+hive> add file /root/9_codes/hive_test/transform_wc/red.py;
+
+select transform(wc.word, wc.count) using 'python red.py' as w, c
+from
+(select transform(data) using 'python mapper.py' as word, count from docs cluster by word) wc
+limit 10;
+
+把wordcount结果插入到指定表中：
+insert overwrite table word_count
+select transform(wc.word, wc.count) using 'python red.py' as w, c
+from
+(select transform(data) using 'python mapper.py' as word, count from docs cluster by word) wc;
+
+========================
+下周计划：
+Hbase（理论+实践）
+
+1月26日、27日上课
+2月16日、17日上课
+
+===============================
+Hbase理论
+1、Hbase主要面向存储，Hbase的数据存在HDFS，同时又少量的数据存在自身的内存中
+2、Hbase适合存储海量的稀疏数据
+3、与关系型数据库对比：
+		 行存储：关系型数据库
+				优点：保证数据的完整性，一次性写入，写入时候做检查
+				缺点：读取过程，会产生冗余信息
+		 列存储：Nosql数据库
+				优点：读数据过程中，不产生冗余信息
+				缺点：写入效率差，不能保证数据完整性
+4、Hbase优点：
+		存储海量数据
+		快速随机访问
+		可以进行大量的改写操作
+5、Hbase结构（逻辑模型）：
+		rowkey -> Column Family -> Column Qualifer
+6、Hbase三维有序
+7、物理模型
+		Hbase相当于MR里的partition，相同的key肯定会出现在一个region上
+		region是hbase集群分布数据的最小单位
+		逻辑概念：region
+		物理概念：Hregion
+8、region分裂：默认10G，开始分裂
+9、行锁定，锁粒度（粗）
+10、一个节点（机器）里有多个region
+		节点称为：RegionServer表示一个机器
+		RegionServer里面存储很多Region（不一定来自同一个Table）
+		HRegionServer，当做一个机器上的进程，主要负责响应用户IO请求，与HDFS交互
+		HRegionServer存储着很多HRegion
+		HRegion里面有很多HStore，HStore是Hbase核心的存储单元
+		
+		HStore有两部分组成：MemStore和StoreFile（HFile）
+		MemStore是一块内存，主要负责写入数据，当达到128M，将内存Flush成为一个StoreFile
+		HStore对应着Table的Column Family
+
+		HRegion是Hbase分布式存储和负载均衡的最小单元，但不是存储的最小单元
+
+		region数目：
+		太多：会增加zookeeper负担，造成读写性能下降
+		太少：降低读写并发的性能，导致压力不够分散
+		
+		对于region过大的要做切分，切成更小粒度的region分散到其他regionserver上去，来缓解压力，负载均衡
+		
+		不允许系统自动切分，空闲时刻再做手动切分
+		合并：手动完成
+
+11、架构(client、HMaster、HRegionServer、ZK)
+		HMaster：负载均衡，管理HRegion，管理Table元数据，权限控制
+		HRegionServer：管理本地HRegion，读写HDFS，维护Table数据
+		本地化原则
+		
+12、zookeeper提供了心跳机制，在master和zk之间，和regionserver之间
+13、寻址：客户端，对Hbase做操作的时候，通过zk获取hregion的地址
+				同时，客户端有还缓存，缓存rowkey->hregion映射关系
+14、memstore：写缓存，每一个CF都有自己的memstore
+				blockCache：读缓存，为了提高读取效率
+15、Hlog，日志机制，避免数据丢失
+				一个RegionServer上的所有Region共享一个Hlog
+				先写log（WAL），然后再写memstore
+16、Hbase表的设计
+				rowkey，在region里按照字母排序（byte排序）
+				rowkey=ip倒叙存储
+				192.168.0.1 -》 1.0.861.291
+
+				加密：hash（md5、crc32）
+
+				总结原则：
+				1）长度：rowkey最大长度64kb，越短越好，尽量不要超过16个字节
+												rowkey过长，内存利用率会降低，系统不能缓存太多数据
+												机器都是64位，内存以8个字节对齐，所以控制在8个字节的整数倍可以获得最佳性能
+				2）分散：建议rowkey的设置散列字段，程序固定生成
+			  3）唯一性：rowkey要求独一无二
+
+				如果rowkey设计不合理，会出现热点问题
+				1）分散，高位加一个散列字段（哈希）
+				2）反转：手机号，ip地址，时间戳——避免固定开头导致热点问题
+
+				CF设计：尽量少，建议CF数量1-2个
+				1、把所有列的数据放在一个文件里？
+							传统行存储的做法
+							如果我们只希望访问个别的几列数据时，需要遍历每一行，效率低
+				2、把所有列的数据分开放到不同文件里？
+							列存储
+							文件数量很多，影响文件系统效率
+
+				需要以上两个方面取折中：Hbase将CF中的列放到一起，不同CF的数据分开存
+
+				当某个CF的数据flush的时候，其他CF也会关联被触发flush，
+				如果CF设计比较多，一旦出现连锁反应，会导致系统产生很的IO，影响性能
+
+				flush和region合并的时候，触发的基本单位都是region
+				如果memstore里面通常存储少量的数据时候，没有必要flush
+
+====================================
+实践：
+1、安装：
+hbase-0.98.6-hadoop2
+
+安装zookeeper：
+1）按安装跟目录下创建myid文件，里面分别填写数字（保证不一样）
+2）zoo.cfg
+server.0=master:8880:7770
+server.1=slave1:8881:7771
+server.2=slave2:8882:7772
+3）分别在所有节点执行：./bin/zkServer.sh start
+
+安装Hbase：
+1）hbase-env.sh
+export JAVA_HOME=/usr/local/src/jdk1.8.0_172
+export HBASE_MANAGES_ZK=false
+
+2）hbase-site.xml
+ <configuration>
+     <property>
+         <name>hbase.rootdir</name>
+         <value>hdfs://master:9000/hbase</value>
+     </property>
+     <property>
+         <name>hbase.cluster.distributed</name>
+         <value>true</value>
+     </property>
+     <property>
+         <name>hbase.zookeeper.quorum</name>
+         <value>master,slave1,slave2</value>
+     </property>
+     <property>
+         <name>hbase.master.maxclockskew</name>
+         <value>150000</value>
+     </property>
+     <!--<property>-->
+         <!--<name>dfs.replication</name>-->
+         <!--<value>2</value>-->
+     <!--</property>-->
+ </configuration>
+
+3）regionservers
+slave1
+slave2
+
+4）把修改好的目录，分发到其他从节点上（scp）
+5）启动hbase：./bin/start-hbase.sh 
+http://master:60010/master-status
+
+
+2、hbase shell操作
+
+6）进入终端：
+]# ./bin/hbase shell
+检查集群是否健康
+> status
+创建表，带了两个CF：
+> create 'm_table', 'meta_data', 'action'
+查看表结构：
+> desc 'm_table'
+增加列簇：
+alter 'm_table', {NAME=>'cf_new', VERSIONS=>3, IN_MEMORY=>true}
+删除列簇：
+alter 'm_table', {NAME=>'action', METHOD=>'delete'}
+
+hdfs查看对应的结构：
+]# hadoop fs -ls /hbase/data/default/m_table/df186b43be6e9e8ad627150b937c76c0
+
+删除表：
+> disable "m_table"
+> drop "m_table"
+
+写数据：
+put "m_table", '1001', 'meta_data:name', 'zhang3'
+put "m_table", '1001', 'meta_data:age', '18'
+put "m_table", '1002', 'meta_data:name', 'li4'
+put "m_table", '1002', 'meta_data:gender', 'man'
+
+读数据：
+全表扫描
+scan "m_table"
+读一条记录：
+get "m_table", '1001'
+
+版本号：
+alter "m_table", {NAME=>'meta_data', VERSIONS=>3}
+
+put "m_table", '1001', 'meta_data:name', 'wang5'
+
+> get "m_table", '1001', {COLUMN=>"meta_data:name", TIMESTAMP=>1548591893705}
+> get "m_table", '1001', {COLUMN=>"meta_data:name", TIMESTAMP=>1548592394970}
+
+get "m_table", '1001', {COLUMN=>"meta_data:name", VERSIONS=>1}
+
+> get "m_table", '1001', {COLUMN=>"meta_data:name", VERSIONS=>2}
+
+知道value反查记录：
+> scan "m_table",  FILTER=>"ValueFilter(=, 'binary:wang5')"
+> scan "m_table",  FILTER=>"ValueFilter(=, 'binary:zhang3')"
+
+查看value漫匹配
+> scan "m_table",  FILTER=>"ValueFilter(=, 'substring:ang')"
+
+两个条件同时限制，对列名前缀做校验
+> scan "m_table", FILTER=>"ColumnPrefixFilter('na') AND ValueFilter(=, 'substring:ang')"
+
+put "m_table", '3001', 'meta_data:name', '777'
+
+scan "m_table", FILTER=>"PrefixFilter('10')"
+> scan "m_table", FILTER=>"PrefixFilter('2')"
+
+scan "m_table", {STARTROW=>'1002'}
+>  scan "m_table", {STARTROW=>'1005'}
+
+从1002开始，满足条件的，检索出来：
+scan "m_table", {STARTROW=>'1002', FILTER=>"PrefixFilter('20')"}
+> scan "m_table", {STARTROW=>'1002', FILTER=>"PrefixFilter('20')"}
+
+put "m_table", 'user|4001', 'meta_data:name', '888'
+
+正则过滤：
+import org.apache.hadoop.hbase.filter.RegexStringComparator
+import org.apache.hadoop.hbase.filter.CompareFilter
+import org.apache.hadoop.hbase.filter.SubstringComparator
+import org.apache.hadoop.hbase.filter.RowFilter
+
+> scan "m_table", {FILTER=>RowFilter.new(CompareFilter::CompareOp.valueOf('EQUAL'), RegexStringComparator.new('^user\|\d+$'))}
+
+查看表的行数：
+> count "m_table"
+
+清空词表：
+> truncate "m_table"
+
+3、python hbase
+下载thrift源码包：thrift-0.8.0.tar.gz
+解压安装：
+1）./configure
+2）make
+3）make install
+
+回到Hbase根目录，启动服务：
+]# ./bin/hbase-daemon.sh start thrift
+
+找到thrift python模块
+thrift-0.8.0/lib/py/build/lib.linux-x86_64-2.6/thrift/
+
+下载Hbase的源码包：hbase-0.98.24-src.tar.gz
+在解压的根目录下：
+hbase-thrift/src/main/resources/org/apache/hadoop/hbase/
+生成Python Hbase 模块
+thrift --gen py Hbase.thrift
+
+1）创建表格
+]# python create_table.py 
+2）写数据：
+]# python insert_data.py
+3）读数据
+]# python get_one_line.py
+4）扫描数据
+]# python scan_many_lines.py 
+
+4、mr + Hbase
+所有基于mr的批量插入，详见batch_insert目录
+
+分裂：
+> split "new_music_table", "7c1fc218348d9651c99e42593a62e6c1"
+
+合并：将两个region合并到一起
+> merge_region "da5a229660c79719421e75e10477a374", "e8e4098d9a79e6442b347496a0a468f3",true
+
+5、java + Hbase给后面课程做铺垫（Storm实时推荐）
+1）写数据
+put "user_action_table", '1001', 'meta_data:name', 'zhang3'
+put "user_action_table", '1001', 'meta_data:age', '18'
+put "user_action_table", '1002', 'meta_data:name', 'li4'
+put "user_action_table", '1002', 'meta_data:gender', 'man'
+
+2）读数据
+HbaseGetOneRecord
+
+3）删数据
+HbaseDelOneRecord
+
+4）扫描数据
+HbaseScanManyRecords
+
+6、Hive+Hbase
+创建Hbase表：
+create 'classes','user'
+加入数据：
+put 'classes','001','user:name','jack'
+put 'classes','001','user:age','20'
+put 'classes','002','user:name','liza'
+put 'classes','002','user:age','18'
+
+创建Hive表并验证：
+create external table classes(id int, name string, age int) 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' 
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,user:name,user:age") 
+TBLPROPERTIES("hbase.table.name" = "classes");
+再添加数据到Hbase：
+put 'classes','003','user:age','1820183291839132'
+
+hive> insert into classes select movieId, title, movieId from movie_table limit 100;
+
+===============================
+
+计划：
+1、flume
+2、kafka
+
+======
+
+Flume（日志收集系统）
+
+1、flume是什么？分布式系统，日志收集，数据采集
+2、flume是可信任的
+		（1）节点出问题：数据传输过程中发生中断，数据回滚或者数据重发来弥补
+		（2）对某一个节点：批次中出现异常，通过重发解决数据异常
+3、Flume可以对接多个数据源：本地+网络
+			console：终端
+			RPC网络
+			text文本
+			tail命令
+			syslog
+			exec
+4、Flume的数据输出：磁盘、hdfs、hbase、kafka、网络传输到下游
+5、flume可以支持垂直扩展，和水平扩展
+6、Flume的核心——agent
+		agent：一个完整的数据收集工具
+7、Storm：tuple
+		  hdfs：block
+		  kafka：message
+		  flume：event
+8、event由两部分组成：数据部分（必须）+头部（可选）
+				头部：kv形式   key-》value
+				body：包含实际内容
+9、agent：代理
+			一个Flume可以有多个agent，每一个agent代表一个独立的守护进程（nohup）
+10、agent内部：分别是 source 、 channel、 sink
+			source：一个flume源
+			channel：存储池，消息存储
+			sink：将event输出到外部介质上
+11、source：有很多类型，不同类的source对接不同类型的数据输入
+			netcat、avro、exec
+12、channel：存储池，只有sink组件处理后的事件，才会在channel中删除该事件
+			（1）filechannel：存在磁盘——保证数据不丢失，慢
+			（2）memorychannel：存在内存——快，存在丢数据风险
+13、sink：将事件放置到外部数据介质上	
+14、interceptor（拦截器）		—— 头部header，可以链式选择多个
+			（1）Timestamp：添加事件
+			（2）host：添加hostname或者ip
+			（3）static：自定义key,value
+			（4）regex filter：通过正则来清洗event
+			（5）regex extractor：通过正则在header中添加指定key，value（来自对数据的分析）
+15、selector（选择器）	
+			根据指定header值，将event发送到不同的channel
+			flume支持一个源发送事件到多个通道（channel）中——》事件流的复用
+			支持两种模式：
+			（1）replicating：复制（默认）
+			（2）multiplexing：复用
+			
+			
+每一个音乐的点击率（点击数、展现数）
+展现数：某一个音乐一共曝光多少次
+点击数
+
+A：ctr
+B：ctr
+C：ctr
+
+实践：
+一、基础部分
+1、Netcat方式：
+启动agent：
+]# ./bin/flume-ng agent --conf conf --conf-file ./conf/flume_netcat.conf --name a1 -Dflume.root.logger=INFO,console
+
+发数据：
+]# telnet master 44444
+
+2、Exec方式：
+]# ./bin/flume-ng agent --conf conf --conf-file ./conf/flume_exec.conf --name a1 -Dflume.root.logger=INFO,console   
+
+发数据：
+]# echo 'abcabc123' >> 1.log
+
+3、输出HDFS
+]# ./bin/flume-ng agent --conf conf --conf-file ./conf/flume.conf --name a1 -Dflume.root.logger=INFO,console
+
+发数据：
+]# echo '我爱你中国' >> 1.log
+
+二、集群部分
+		利用3台机器来完成：master、slave1、slave2
+1、故障转移（failover）：
+			master：
+				]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/agent_agent_collector_base/flume-client.properties --name agent1 -Dflume.root.logger=INFO,console
+
+			slave1：
+			]# ./bin/flume-ng agent --conf conf --conf-file ./conf/agent_agent_collector_base/flume-server.properties --name a1 -Dflume.root.logger=INFO,console
+			
+			slave2：
+			]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/agent_agent_collector_base/flume-server.properties --name a1 -Dflume.root.logger=INFO,console
+
+2、负载均衡（loadbalance）：
+			master：
+			]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/agent_agent_collector_base/flume-client.properties_loadbalance --name a1 -Dflume.root.logger=INFO,console
+			
+			slave1：
+			]# ./bin/flume-ng agent --conf conf --conf-file ./conf/agent_agent_collector_base/flume-server.properties --name a1 -Dflume.root.logger=INFO,console
+			
+			slave2：
+			]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/agent_agent_collector_base/flume-server.properties --name a1 -Dflume.root.logger=INFO,console
+
+3、拦截与过滤（interceptor）
+（1）Timestamp：
+]#  ./bin/flume-ng agent --conf conf --conf-file .onf/interceptor_test/flume_ts_interceptor.conf --name a1 -Dflume.root.logger=INFO,console
+
+curl -X POST -d '[{"headers":{"flume":"flume is very easy!"}, "body":"hellobadou"}]' http://master:52020 
+（2）host：
+]#  ./bin/flume-ng agent --conf conf --conf-file .onf/interceptor_test/flume_hostname_interceptor.conf --name a1 -Dflume.root.logger=INFO,console 
+
+]# echo "abcabc123123" | nc master 52020
+
+（3）static：自定义
+]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/interceptor_test/flume_static_interceptor.conf --name a1 -Dflume.root.logger=INFO,console
+
+]# curl -X POST -d '[{"headers":{"flume":"flume is very easy!"}, "body":"hellobadou"}]' http://master:52020
+
+（4）regex filter
+]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/interceptor_test/flume_regex_interceptor.conf --name a1 -Dflume.root.logger=INFO,console
+
+]# curl -X POST -d '[{"headers":{"flume":"flume is very easy!"}, "body":"111"}]' http://master:52020
+ 
+（5）regex extractor
+]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/interceptor_test/flume_regex_interceptor.conf_extractor --name a1 -Dflume.root.logger=INFO,console
+
+a1.sources.r1.interceptors = i1
+a1.sources.r1.interceptors.i1.type = regex_extractor
+a1.sources.r1.interceptors.i1.regex = (\\d):(\\d):(\\d)
+a1.sources.r1.interceptors.i1.serializers = s1 s2 s3
+a1.sources.r1.interceptors.i1.serializers.s1.name = one 
+a1.sources.r1.interceptors.i1.serializers.s2.name = two 
+a1.sources.r1.interceptors.i1.serializers.s3.name = three
+
+]# curl -X POST -d '[{"headers":{"flume":"flume is very easy!"}, "body":"1:2:3:4ddd"}]' http://master:52020  
+
+4、复制与复用（选择器selector）
+（1）复制（广播的形式发送给下游各个节点）
+master:
+]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/selector_test/flume_client_replicating.conf --name a1 -Dflume.root.logger=INFO,console
+
+slave1:
+]# ./bin/flume-ng agent --conf conf --conf-file ./conf/selector_test/flume_server.conf --name a1 -Dflume.root.logger=INFO,console
+
+slave2:
+]# ./bin/flume-ng agent --conf conf --conf-file ./conf/selector_test/flume_server.conf --name a2 -Dflume.root.logger=INFO,console   
+
+（2）复用
+master:
+]#  ./bin/flume-ng agent --conf conf --conf-file ./conf/selector_test/flume_client_multiplexing.conf --name a1 -Dflume.root.logger=INFO,console
+
+slave1:
+]# ./bin/flume-ng agent --conf conf --conf-file ./conf/selector_test/flume_server.conf --name a1 -Dflume.root.logger=INFO,console
+
+slave2:
+]# ./bin/flume-ng agent --conf conf --conf-file ./conf/selector_test/flume_server.conf --name a2 -Dflume.root.logger=INFO,console   
+
+
+===============
+
+下节课预告：
+1、Kafka
+
+
+
+LR排序 -> NN
+离线推荐 -> 实时推荐
+TFIDF -> 
+
+flume kakfa storm spark hbase
+
+flume -> hbase
+
+flume -> storm ->hbase
+
+activemq topic
+
+音乐item 几十w  元数据50G， 用户10亿
+
+==========================
+
+Kafka：
+1、定位：分布式的消息队列系统，同时提供数据分布式缓存功能（默认7天）
+2、消息持久化到磁盘，达到O(1)访问速度，预读和后写，对磁盘的顺序访问（比内存访问还要快）
+3、Storm（分布式的实时计算框架）
+		 Kafka目标成为队列平台
+4、基本组件：
+			Broker：每一台机器是一个Broker
+			Producer：日志消息生产者，主要写数据
+			Consumer：日志消息消费者，主要读数据
+			Topic：是虚拟概念，不同的consumer去指定的topic去读数据，不同producer可以往不同的topic去写
+			Partition：是实际概念，文件夹，是在Topic的基础上做了进一步分层
+5、Partition功能：负载均衡，需要保证消息的顺序性
+			顺序性的保证：订阅消息是从头往后读取的，写消息是尾部追加，所以整体消息是顺序的
+			如果有多个partiton存在，可能会出现顺序不一致的情况，原因：每个Partition相互独立
+6、Topic：逻辑概念
+			一个或多个Partition组成一个Topic
+7、Partition以文件夹的形式存在
+8、Partition有两部分组成：
+			（1）index log：（存储索引信息，快速定位segment文件）
+			（2）message log：（真实数据的所在）
+9、HDFS多副本的方式来完成数据高可用
+			如果设置一个Topic，假设这个Topic有5个Partition，3个replication
+			Kafka分配replication的算法：
+			假设：
+						将第i个Partition分配到(i % N)个Broker上
+						将第i个Partition的第j个replication分配到( （i+j） % N)个Broker上
+						虽然Partition里面有多个replication
+						如果里面有M个replication，其中有一个是Leader，其他M-1个follower
+10、zookeeper包系统的可用性，zk中会保存一些meta信息（topic）
+11、物理上，不同的topic的消息肯定是分开存储的
+12、偏移量——offset：用来定位数据读取的位置
+13、kafka内部最基本的消息单位——message
+14、传输最大消息message的size不能超过1M，可以通过配置来修改
+15、Consumer Group
+16、传输效率：zero-copy
+				0拷贝：减少Kernel和User模式上下文的切换
+				直接把disk上的data传输给socket，而不是通过应用程序来传输
+17、Kafka的消息是无状态的，消费者必须自己维护已消费的状态信息（offset）
+				减轻Kafka的实现难度
+18、Kafka内部有一个时间策略：SLA——消息保留策略（消息超过一定时间后，会自动删除）
+19、交付保证：
+			at least once：至少一次（会有重复、但不丢失）
+			at most once：最多发送一次（不重复、但可能丢失）
+			exactly once：只有一次（最理想），目前不支持，只能靠客户端维护
+20、Kafka集群里面，topic内部由多个partition（包含多个replication），达到高可用的目的：
+			日志副本：保证可靠性
+			角色：主、从
+			ISR：是一个集合，只有在集合中的follower，才有机会被选为leader
+			如何让leader知道follower是否成功接收数据（心跳，ack）
+			如果心跳正常，代表节点活着
+21、怎么算“活着”
+			（1）心跳
+			（2）如果follower能够紧随leader的更新，不至于被落的太远
+			如果一旦挂掉，从ISR集合把该节点删除掉
+
+=======================
+
+实践（需要把zookeeper提前启动好）：
+一、单机版
+1、启动进程：
+		]# ./bin/kafka-server-start.sh config/server.properties
+2、查看topic列表：
+		]# ./bin/kafka-topics.sh --list --zookeeper localhost:2181
+3、创建topic：
+		]# ./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic newyear_test
+4、查看topic描述：
+		]# ./bin/kafka-topics.sh --describe --zookeeper localhost:2181  --topic newyear_test                  
+5、producer发送数据：
+		]# ./bin/kafka-console-producer.sh --broker-list localhost:9092 --topic newyear_test
+6、consumer接收数据：
+		]# ./bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic newyear_test --from-beginning
+7、删除topic：
+		]# ./bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic newyear_test
+
+二、集群版
+在slave1和slave2上的broker.id一定设置不同
+分别在slave1和slave2上开启进程：
+./bin/kafka-server-start.sh config/server.properties
+
+创建topic：
+]# ./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 3 --partitions 5 --topic newyear_many_test 
+
+
+下面命令会创建失败：原因副本数超出实际机器个数
+]# ./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 4 --partitions 5 --topic newyear_many_test_2
+
+三、自主写producer、consumer
+1、实现一个consumer group
+首先在不同的终端分别开启consumer，保证groupid一致
+]# python consumer_kafka.py
+]# python consumer_kafka.py 
+
+执行一次producer：
+]# python producer_kafka.py
+
+2、指定partition发送数据
+]# python producer_kafka_2.py
+
+3、指定partition读出数据
+]# python consumer_kafka_2.py
+
+四、Flume+Kafka
+1、启动flume：
+		]# ./bin/flume-ng agent --conf conf --conf-file ./conf/flume_kafka_2.conf --name a1 -Dflume.root.logger=INFO,console
+		
+		发送：
+		// ]# for i in `seq 1 100`; do echo '====> '$i >> 1.log ; done 
+		
+		]# curl -X POST -d '[{"headers":{"flume":"flume is very easy!"}, "body":"111"}]' http://master:52020
+		
+		
+]# cat conf/flume_kafka_2.conf 
+# Name the components on this agent
+a1.sources = r1
+a1.sinks = k1
+a1.channels = c1
+
+# Describe/configure the source
+#a1.sources.r1.type = exec
+#a1.sources.r1.command = tail -f /root/9_codes/flume_test/1.log
+
+a1.sources.r1.type = http
+a1.sources.r1.host = master
+a1.sources.r1.port = 52020
+
+a1.sources.r1.interceptors = i1
+a1.sources.r1.interceptors.i1.type = org.apache.flume.sink.solr.morphline.UUIDInterceptor$Builder
+a1.sources.r1.interceptors.i1.headerName = key
+a1.sources.r1.interceptors.i1.preserveExisting = false
+
+# Describe the sink
+a1.sinks.k1.type = org.apache.flume.sink.kafka.KafkaSink
+a1.sinks.k1.brokerList  = master:9092
+#a1.sinks.k1.topic = badou_flume_kafka_test
+#a1.sinks.k1.topic = badou_storm_kafka_test
+a1.sinks.k1.topic = newyear_many_test
+
+# Use a channel which buffers events in memory
+a1.channels.c1.type = memory
+a1.channels.c1.capacity = 1000
+a1.channels.c1.transactionCapacity = 100
+
+# Bind the source and sink to the channel
+a1.sources.r1.channels = c1
+a1.sinks.k1.channel = c1
+
+
+==================
+下周计划：
+Storm + Zookeeper ： 实时推荐（Storm + Hbase）
+java ide
+
+=====================
+Zookeeper：
+1、Zookeeper是分布式锁服务，对集群的稳定性起到了关键性的作用
+		  多点的服务，提供了避免单点故障的风险
+2、一个松散耦合的分布式系统中粗粒度锁以及可靠性存储（低容量）的系统
+		（1）松散耦合：硬件不严格要求
+		（2）分布式：多个机器
+		（3）粗粒度锁：节点之间物理隔离的状态下，满足维持生态秩序的服务
+		（4）可靠性存储：可以存储数据（一致性）
+3、数据模型：目录树结构，必须绝对路径访问节点
+4、节点类型：
+			Persistent Nodes
+			Ephemeral Nodes
+			Persistent Nodes + Sequence Nodes
+			Ephemeral Nodes + Sequence Nodes
+5、监控：
+			getData：数据是否被修改
+			getChildren：父节点下的子节点列表变化
+			exists：节点是否存在
+6、权限管理：
+			ACL：访问控制链
+			权限：create、read、write、delete、admin
+			模式：world、auth、digest、host、ip
+			设计：三元组的形式生效：
+							<scheme：expression， perms>
+
+应用场景：
+1、配置管理：——文件——永久
+2、集群管理：——选主——临时+顺序
+3、队列管理：——FIFO（先入先出）、同步队列
+			FIFO（先入先出）：顺序节点
+			同步队列：顺序节点
+			
+实践：
+1、选主（自主）——锁
+2、第三方pylib——kazoo
+]# pip install kazoo
+https://kazoo.readthedocs.io/en/latest/
+3、锁服务kazoo
+
+==========================
+Storm：
+1、Storm流式处理：
+			Storm vs. mapreduce：
+			Storm：面向实时
+					缺点：吞吐能力差
+					优点：时效性好，毫秒级别，增量式处理
+			Mapreduce：面向批量
+					缺点：时效性差
+					优点：吞吐能力强，适合批处理
+
+2、Storm：没有持久化功能——》快
+			可靠性：保证消息处理
+			本地模式
+			原语：spout和bolt
+			
+3、Storm基本概念：
+			1）Stream：数据流
+			2）Tuple：最基本的数据单元
+			3）Topology：网络拓扑
+						Grouping：Shuffle/Fields
+			4）Spout：消息生产者
+						可以对接很多类型的数据流
+						收集消息处理的ack、fail
+			5）Bolt：消息处理逻辑
+						过滤、访问外部服务、数据格式化、聚合、汇总。。。
+						可以发送多条流
+4、常见模式：
+		（1）流式
+		（2）持续计算——机器学习迭代
+		（3）分布式RPC——独立服务
+5、架构：
+			主：Nimbus：分配工作
+						如果挂掉：重启之后，像什么事情没有发生一样——无状态（快速失败fail-fast）
+			从：Supervisor：监控工作
+							快速失败fail-fast，监控Worker工作
+							Worker：工作进程
+							Task：线程
+										spout和bolt的线程都是task
+										executor进程，里面维护很多task，每次只会执行一个task
+			Zookeeper协调管理
+
+6、容错：
+		架构容错
+		数据容错：
+					（1）timeout
+					（2）ack机制：本质是一个特殊的task
+
+
+
+音乐A ——> 标题 修改（1小时前）， 
+
+
+
+
+=====
+实践：
+
+1、启动
+master：
+		python bin/storm nimbus &
+		python bin/storm ui &
+		python bin/storm logviewer &
+
+slave：
+		python bin/storm supervisor &
+		python bin/storm logviewer &
+		
+监控页面：
+http://192.168.87.10:8080/index.html
+
+2、wordcount任务
+3、Flume+kafka+Storm
+
+flume：
+./bin/flume-ng agent --conf conf --conf-file ./conf/flume_kafka.conf --name a1 -Dflume.root.logger=INFO,console
+
+kafka：
+ ./bin/kafka-server-start.sh config/server.properties
+
+4、Storm + 中文分词
+Flume+kafka+Storm + 中文分词
+
+南京市长江大桥真长
+
+5、实时推荐
+Flume+kafka+Storm+Hbase
+
+
+
+1、Flume+kafka+Storm+Hbase+Hive —— 数据通路
+
+
+港台金曲
+
+itemA 
+
+
+put 'new_music_table', '港台金曲', 'meta-data:name', '歌曲A'
+put 'new_music_table', '港台金曲', 'meta-data:name', '歌曲B'
+put 'new_music_table', '港台金曲', 'meta-data:name', '歌曲C'
+
+put 'new_music_table', '3001', 'meta-data:name', '777'
+
+put 'new_music_table', '1001', 'meta-data:name', 'musicB'
+put 'new_music_table', '1001', 'meta-data:name', 'musicC'
+put 'new_music_table', '1001', 'meta-data:name', 'musicD'
+
+
+===================
+下周预告：
+
+1、spark streaming
+2、spark sql
+
+==========================
+Streaming
+
+1、Streaming定位：是Spark体系内的流式处理框架（和Storm对比）
+		Storm：数据像水流一样，最基本的单位是tuple——毫秒级
+		Streaming：把水状的数据，按照时间进行离散化处理——秒级（一般不影响业务）
+2、Spark Core：核心的计算引擎，支撑了很多项目，Streaming是其中一个
+3、Spark开发的时候，相当于开发RDD的DAG图
+			Core中，算子有两类：transformation和action  ——> 懒惰机制
+			Streaming，算子有两类：transformation和output ——> 懒惰机制
+			
+			Core：针对RDD开发，处理结构以DAG形式表现
+			Streaming：针对Dstream开发，处理结构以DstreamGraph形式表现
+
+			Dstream：内部包含多个RDD，代表了一系列的连续的RDD，每一个RDD包含特定的时间间隔
+
+			DStream里面的各种操作是可以映射到内部的RDD上进行的
+			DStream的操作可以通过RDD的transformation生成新的Dstream
+4、DStream的算子和RDD的算子不一样：
+		1）transformation
+		2）output：
+					执行算子：forEachRDD：对接外部服务：Hbase、Kafka、Hive
+					输出算子：saveAsTextFile：直接做输出
+5、时间窗口
+			例如：统计最近一个小时内的PV量，要求每一分钟更新一次
+			1）窗口总长度（window length）—— 一个小时
+			2）滑动时间间隔（slide interval）—— 一分钟
+
+6、Streaming架构：
+			master：分配任务：任务结构（Graph）
+			worker：处理任务，包含：接收数据+处理数据
+			client：喂数据
+			
+			处理数据模式，2类：
+			1）recevier模式：被动——异步
+						优点：快
+						缺点：启动多executor
+			2）direct模式：主动——同步
+						优点：一个executor占用资源少
+						缺点：慢
+
+7、容错——数据容错WAL
+
+
+======
+
+实践：
+0、spark启动、hbase
+
+1、基本demo
+		1）无状态的wordcount
+		2）有状态的wordcount
+2、时间窗口
+3、kafka+streaming（kafka+storm）
+		数据挤压：下游处理速度慢（并发不够、处理速度慢）
+		
+		kafka -> streaming
+		1）数据分布，调节offset——紧急
+		2）并发调大，需要kafka配合（增加分区数）,提高线程数量
+		3）控制批次的规模—— max.poll.records
+		4）控制数据处理时间（timeout）—— max.poll.interval.ms
+		
+
+1、启动进程：
+		]# ./bin/kafka-server-start.sh config/server.properties
+2、查看topic列表：
+		]# ./bin/kafka-topics.sh --list --zookeeper localhost:2181
+3、创建topic：
+		]# ./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic newyear_test
+4、查看topic描述：
+		]# ./bin/kafka-topics.sh --describe --zookeeper localhost:2181  --topic newyear_test                  
+5、producer发送数据：
+		]# ./bin/kafka-console-producer.sh --broker-list localhost:9092 --topic newyear_test
+6、consumer接收数据：
+		]# ./bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic newyear_test --from-beginning
+7、删除topic：
+		]# ./bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic newyear_test
+
+		
+			1）receiver
+			2）direct
+4、kafka+streaming+kafka
+
+for循环每次处理：
+A、每隔5秒的一个批次
+B、每条数据
+
+5、kafka+streaming+hbase（kafka+storm+hbase）
+6、kafka+streaming+sql
+==========
+Spark SQL
+1、Hive中存储数据分了哪几个层次：
+		table / partition / bucket / hdfs
+		hive的sql最终会转化成mapreduce
+
+		spark sql和hive结合起来用（数据仍然存在hive）
+
+2、spark sql，处理结构化数据
+3、spark streaming中有一个模板——Dstream
+      spark SQL也有新的概念——DataFrame——当成一个table（关系表）
+      DataFrame = 关系型表格
+      
+4、DataFrame的数据来源：数据源多样
+	 1）外部数据源（SQLContext）：HDFS、网络接口、Mysql等
+	 2）Hive数据源（HiveContext）：Hive
+   两者关系：HiveContext继承自SQLContext，HiveContext只能支持HQL
+                                                                           SQLContext支持语法更多
+      
+		DataFrame让数据处理更为简单，是一个分布式的Table
+		与RDD区别：传统RDD以行为单位，读数据，DataFrame基于列的内部优化
+		与RDD相同点：都具备懒惰机制（基于RDD的抽象）
+
+5、Spark SQL处理核心：Catalyst工作流程（本质：把sql、dataframe相结合，以树tree的形式来存储、优化）
+			优化点：
+			1）基于规则：
+					（1）一种经验式、启发式优化思路
+					（2）join算子——两张表做join
+								a）外排：
+											大循环外排：A、B，两张表都很大，O(M*N)——不用
+											游标式外排：归并排序
+								b）内排：小表放内存，大表做遍历（hive中的mapside join）
+			2）基于代价：
+						（1）评估每种策略选择的代价，根据代价估算，确定代价最小的方案
+						（2）代价估算模型——调整join的顺序，减少中间shuffle数据的规模
+			
+			catalyst工作流程
+			（1）parser：针对sql解析
+			（2）analyzer：借助元数据（catalog）解析
+			（3）optimizer：基于规则的优化策略
+			（4）物理计划：基于代价的优化策略
+			
+			catalyst优化引擎，执行时间减少75%
+			
+6、内存管理：Tungsten 内存管理器—— off-heap
+			本质：突破JVM内存管理限制，分配堆外内存
+			JVM：GC带来时间开销，可能出现“假死”情况，
+
+=========================
+实践：
+1、基本demo：
+		读数据：
+		1）从hdfs的原始text中读数据：sqlTest
+		2）从hdfs的原始text中读数据（json串）：sqlJsonText
+		3）从hive中读数据：sqlHiveTest
+				启动mysql：
+						]# systemctl start mariadb
+
+2、UDF相关操作：
+		1）udf：单条记录处理（map）：sqlUdf
+		2）udaf：聚合场景（groupby）
+				例子：每一个打分背后，有多少人参与
+				
+3、终端
+		select rating, count(*) from rating_table_ex group by rating limit 100;
+		
+4、kafka+streaming+hbase（kafka+storm+hbase）
+
+foreachRDD——时间批次
+foreachPartition—— Kafka分区，负载均衡，成批次
+foreach——真实数据
+
+5、streaming+sql
+		sqlAndStreamingWC
+6、streaming+sql + hbase
+		streamSqlHbase
+
+============================
+下周预告：
+1、logserver
+nginx + spwancgi + thrift + flume + hbase
+
+任务1：调通单机版的thrift、python版本
+
+rpc：好处
+1）安全，数据加密（二进制）
+2）数据压缩，节省带宽，提升性能
+3）解耦，常用于内部服务之间的互通
+
+（1）安装thrift（下载、编译）
+]# tar xvzf thrift-0.9.3.tar.gz
+完成解压，进入thrift源码的根目录下
+
+安装依赖库（yum库）
+]# yum install boost-devel-static libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev ant
+
+安装c、c++源码包通常3步：
+1）./configure --with-cpp --with-boost --with-python --without-csharp --with-java --without-erlang --without-perl --without-php --without-php_extension --without-ruby --without-haskell  --without-go
+2）make
+3）make install
+此刻完成thrift的安装
+
+接下来，保证python可支持的模块
+]# pip install thrift==0.9.3
+
+继续，创建接口文件
+]# cat RecSys.thrift
+service RecSys {
+    string rec_data(1:string data)
+}
+
+利用接口文件，自动生成代码（python：接口模块，c++：server）
+
+]# thrift --gen py RecSys.thrift
+
+1）先启动server，等待数据
+]# python server.py
+
+2）发送数据client
+]# python client.py
+
+任务2：调通单机版的thrift、c++版本
+
+首先，产生c++的接口代码：
+]# thrift --gen cpp RecSys.thrift
+
+进入目录，直接编译
+]# g++ -I/usr/local/include/thrift/  -lthrift RecSys_server.skeleton.cpp RecSys.cpp RecSys_constants.cpp  -o server
+
+做进一步修改：
+ 23   void rec_data(std::string& _return, const std::string& data) {
+ 24     // Your implementation goes here
+ 25     //printf("rec_data\n");
+ 26     std::cout << "Receive Data: " << data << std::endl;
+ 27     
+ 28     _return = "I'm OK !!!";
+ 29   } 
+
+接下来，开发client端：
+]# g++ -I/usr/local/include/thrift/  -lthrift client.cpp RecSys.cpp RecSys_constants.cpp  -o client 
+
+任务3、多语言互通，python -> c++   c++ -> python
+
+任务4、搭建Nginx服务器
+通常用Nginx来做分发器
+nginx-1.14.0.tar.gz
+
+安装通常3步：
+1）./configure --prefix=/usr/local/nginx/
+2）make
+3）make install
+
+启动nginx：
+在/usr/local/nginx目录下
+]# ./sbin/nginx
+
+http://192.168.87.10/
+http://master/
+
+]# netstat -antup | grep 80
+
+任务5、配合cgi完成独立的server
+CGI：公共网关协议：在web服务器上开发一个cgi的程序，改程序可以访问计算机上的资源
+
+下载：fcgi-2.4.1-SNAP-0910052249.tar.gz
+
+添加#include <cstdio> 头文件
+
+在/root/9_codes/logserver_test/tools/fcgi-2.4.1-SNAP-0910052249目录下
+]# vim include/fcgio.h
+第35行
+
+安装通常3步：
+1）./configure
+2）make
+3）make install
+
+开始开发一个cgi的demo
+]# cat test.cpp 
+#include <iostream>
+#include <string>
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <fcgi_stdio.h>
+#include <fcgiapp.h>
+
+using namespace std;
+
+
+inline void send_response(
+            FCGX_Request& request, const string& resp_str) {
+
+    FCGX_FPrintF(request.out, "Content-type: text/html;charset=utf-8\r\n\r\n");
+    FCGX_FPrintF(request.out, "%s", resp_str.c_str());
+
+    FCGX_Finish_r(&request);
+}
+
+int main(int argc, char **argv) {
+
+    FCGX_Init();
+    FCGX_Request request;
+    FCGX_InitRequest(&request, 0, 0);
+
+    while(FCGX_Accept_r(&request) >= 0) {
+        string query_str = FCGX_GetParam("QUERY_STRING", request.envp);
+
+        cout << "query str: " << query_str << endl;
+
+        send_response(request, query_str);
+    }
+
+    return 0;
+}
+
+]# g++ test.cpp -lfcgi -o test
+
+为了完成整个cgi demo开发，接下来需要安装spawn-cgi并完成服务托管
+
+wget https://github.com/lighttpd/spawn-fcgi/archive/spawn-fcgi-1.6.4.tar.gz
+spawn-fcgi-1.6.4.tar.gz
+
+安装分4步：
+1）./autogen.sh
+2）./configure
+3）make
+4）make install
+
+接下来，用spawn-fcgi工具托管自主开发的cgi demo bin（test）
+]# /usr/local/bin/spawn-fcgi -a 127.0.0.1 -p 8099 -f /root/9_codes/logserver_test/cgi_demo/test
+
+配置nginx的反向代理功能：
+/usr/local/nginx/conf目录下
+nginx.conf文件中
+
+
+加入
+ 48         location ~ /badou_recsys$ {
+ 49             fastcgi_pass 127.0.0.1:8099;
+ 50             include fastcgi_params;
+ 51         }
+
+配置完后，重新加载配置：
+]# ./sbin/nginx -s reload
+
+http://master/badou_recsys?userid=111&item=222&action=click
+http://192.168.87.10/badou_recsys?userid=111&item=222&action=click
+http://192.168.87.10/badou_recsys?userid=333&item=222&action=click
+
+
+任务6、把用户行为信息写入到本地文件（log文件）——google glog日志模块
+
+glog日志级别  FATAL（高） > ERROR > WARNING > INFO > TRACE > DEBUG(低)
+
+安装glog：
+1）./configure
+2）make
+3）make install
+
+开发client
+]# g++ -lglog -lfcgi client.cpp -o client 
+
+/usr/local/bin/spawn-fcgi -a 127.0.0.1 -p 8099 -f /root/9_codes/logserver_test/cgi_demo/client
+
+此时可以观察日志输出
+
+任务7、将thrift和cgi联合打通，完整日志服务
+
+thrift——内部服务，解耦
+cgi——web服务
+
+]# g++  -I/usr/local/include/thrift -lthrift -lglog -lfcgi RecSys.cpp RecSys_constants.cpp client.cpp -o client 
+
+/usr/local/bin/spawn-fcgi -a 127.0.0.1 -p 8099 -f /root/9_codes/logserver_test/schema/gen-cpp/client
+
+Makefile整理：
+]# cat Makefile 
+GXX = g++
+CFLAGS = -g -Wall -O3
+
+INCLUDE = -I/usr/local/include/thrift
+
+LIBS = -lthrift -lglog -lfcgi
+
+CLIENT_OBJECTS = RecSys.cpp RecSys_constants.cpp client.cpp
+SERVER_OBJECTS = RecSys_server.skeleton.cpp RecSys.cpp RecSys_constants.cpp
+
+
+server:
+        $(GXX) $(CFLAGS) $(INCLUDE) $(LIBS) $(SERVER_OBJECTS) -o server
+
+client:
+        $(GXX) $(CFLAGS) $(INCLUDE) $(LIBS) $(CLIENT_OBJECTS) -o client
+
+.PHONY: clean
+clean:
+        rm -rf client server
+        
+执行：
+make client
+make server
+make clean
+
+任务8、压力测试，同时产生用户行为数据
+ab命中压测命令：
+]# yum install httpd-tools
+
+ab -c 20 -n 5000 http://192.168.87.10/badou_recsys?userid=333&itemid=222&type=click&ip=1.0.0.10
+
+http://192.168.87.10:9088/
+
+差20倍！！
+
+接下来模拟真实请求，积累多样性的日志：
+]# cat request.py       
+import os
+import sys
+import random
+
+base_url='http://192.168.87.10/badou_recsys?'
+
+action_type_list = ['show', 'click', 'collect', 'pay']
+ip_addr_list = ['10.1.1.3', '10.5.2.76', '10.1.2.90', '10.0.2.188', '10.10.1.19']
+
+url_list = []
+for i in range(1000):
+    userid = "userid=" + str(int(random.random() * 50))
+    itemid = "itemid=" + str(random.randint(30001, 30050))
+    action_type = "type=" + random.sample(action_type_list, 1)[0]
+    ip = "ip=" + random.sample(ip_addr_list, 1)[0]
+
+    url = "\"" + base_url +'&'.join([userid, itemid, action_type, ip]) + "\""
+    url_list.append(url)
+
+for i in url_list:
+    #os.system('ab -c 20 -n5000 ' + url)
+    os.system('curl ' + i)
+
+
+任务9、实时对接用户行为log，Flume进行实时流的打通
+
+利用IDE，完成FlumeHbaseEventSerializer的开发，编译jar包
+将生成的/root/IdeaProjects/FlumeTest/target/FlumeTest-1.0-SNAPSHOT.jar文件
+拷贝到/usr/local/src/apache-flume-1.6.0-bin/lib目录下
+
+回到Flume的配置中：
+/usr/local/src/apache-flume-1.6.0-bin/conf/logserver_flume_hbase目录下：
+
+指定一下sink方式：
+a1.sinks.k1.type = hbase
+a1.sinks.k1.table = user_action_table
+a1.sinks.k1.columnFamily = action_log
+a1.sinks.k1.serializer = com.badou.FlumeHbaseEventSerializer
+a1.sinks.k1.serializer.columns = userid,itemid,type,ip
+
+打通之前，我们需要准备Hbase
+
+任务10、把Flume中接收到的数据，实时的写入Hbase，完成日志入库（非结构化->结构化）
+
+./bin/flume-ng agent --conf conf --conf-file ./conf/logserver_flume_hbase/flume-client.properties --name a1 -Dflume.root.logger=INFO,console
+
+ ./bin/flume-ng agent --conf conf --conf-file ./conf/logserver_flume_hbase/flume-server.properties --name a1 -Dflume.root.logger=INFO,console
+ 
+ hbase -》 flume -》 nginx -》cgi -》压力
+ 
+任务11、完成Nginx的负载均衡（支撑高并发）
+
+192.168.87.10 master ——> server1
+192.168.87.11 slave1 ——> server2
+192.168.87.12 slave2 ——> proxy
+
+
+反向代理，完成负载均衡
+
+192.168.87.10 master ——> server1
+保证logserver+flume+hbase流程跑通
+
+192.168.87.11 slave1 ——> server2
+保证logserver+flume+hbase流程跑通
+* 只需要启动flume的client（agent）
+保证flume的jar、flume的配置和master的一致
+
+192.168.87.12 slave2 ——> proxy
+保证server1和server2启动，proxy的nginx conf添加如下配置：
+    upstream recserver {
+        server 192.168.87.10:80;
+        server 192.168.87.11:80;
+    }   
+
+ 55         location ~ /badou_recsys$ {
+ 56             #fastcgi_pass 127.0.0.1:8099;
+ 57             #include fastcgi_params;
+ 58             proxy_pass http://recserver;
+ 59         }
+
+nginx -s reload重新加载配置，生效
+
+验证
+
+ab -c 20 -n 5000 'http://192.168.87.12/badou_recsys?userid=333&itemid=222&type=click&ip=1.0.0.10'
+
+
+=======================
+
+1、聚类算法
+2、深度学习
+
+
+推荐算法——cf cb （无监督式学习）
+
+分类、回归——排序模型（LR、Softmax、DNN、DT）——准备数据需要标签（监督式学习）
+
+聚类算法（无监督式学习）
+粒度：粗粒度、细粒度
+
+榴莲——香蕉、苹果
+
+聚类划分：
+1、层次聚类、非层次聚类
+2、硬聚类、软聚类
+
+聚类前，必须对物品进行表示，有2种方法：
+1、向量方式(重点)：用一个向量来表示物品
+求质心：
+A：(a1, a2, a3)
+B：(b1, b2, b3)
+C：(c1, c2, c3)
+
+质心=( (a1+b1+c1)/3, (a2+b2+c2/3,  (a3+b3+c3)/3)
+
+2、距离矩阵、相似度矩阵：和之前推荐算法很相似
+
+3、评估聚类效果：
+（1）内部方法（重点）：
+		同一类里要求相似，不同类之间不相似
+		
+		标准=分子/分母
+		
+		分子：每个样本到类心的距离和，越小越好（同一类里要求相似）
+		分母：没个类的类心之间，距离越大越好（不同类之间不相似）
+	
+（2）外部方法：（准确、召回=PR）
+
+B=0   F=P
+B=1  F：同时考虑P和R，并且没有任何偏重 
+F想更倾向于学习P还是R？还是两者均匀，都是通过B参数来控制的
+
+F1=P*R/(P+R)
+
+4、分层聚类：
+（1）凝聚（重点）
+
+O(n^3)——非常耗时！！！
+
+相似度的表达：两个样本之间的cosine
+
+榴莲、苹果 -》
+
+（2）分裂
+
+5、非层次聚类——Kmeans
+t次
+
+O(nkt)
+
+A：(a1, a2, a3)
+B：(b1, b2, b3)
+
+距离=sqrt((a1-b1)^2 + (a2-b2)^2 + (a3-b3)^2 )
+
+cosine相似度
+
+相似度 ， 距离
+
+缺点：非常依赖于中心点（初始点）的选择
+解决：多训练几轮，求平均
+
+Kmeans模型？（k个点）
+
+k的选择，根据业务场景
+
+===================
+
+深度学习实践DNN（pytorch）——lr softmax
+
+
+f(x) = WX+b
+
+================
+1、分析模型有什么问题？
+		（1）是否支持大规模数据，进行快速训练？（Mini-batch来训练）
+	 	 ]# python train_2.py
+	 	 
+2、模型怎么用？
+		（1）参数怎么得到？
+						torch.save(checkpoint, model_path)
+
+		（2）模型怎么用？（加载、预测）
+						torch.load
+						]# python dump_model.py model/epoch_9_batch_id_20_acc_0.827.chkpt
+		
+		hidden = np.sum(np.multiply(hidden_weight, embedding_tanh), axis=1) + hidden_bias
+		
+3、模型怎么评估？
+		auc评估
+		]# cat data/a8a | python predictor.py > auc.txt 
+
+]# cat auc.raw | sort -t$'\t' -k2g  | awk -F'\t' '($1==-1){++x;a+=y}($1==1){++y}END{print 1.0 - a/(x*y)}'
+acc=0.827
+auc=0.842569
+
+acc=0.745
+auc=0.494206
+
+===================
+
+扩展部分：2周时间
+两个方向：
+1、模型融合方向：决策树——>模型融合（rf、gbdt）
+2、推荐方向：ALS——>word2vec（NLP）、topic
+
+Mllib -》 lr
+
+lr+nb+kmeans：
+scala版本
+
+python版本
+
+================
+
+4.13：
+（1）决策树dt
+（2）模型融合（随机森林random forest、GBDT）
+
+4.14：
+（1）word embedding（词嵌入）
+（2）tfidf——>Bm25
+（3）word2vec（DNN）——1层神经网络，深度学习铺垫
+
+4.20：
+（1）迭代最小二乘法——als推荐
+（2）CNN（卷积神经网络）——深度学习
+
+4.21：
+（1）RNN（循环神经网络）——深度学习
+（2）ANN——多维空间检索算法
+
+
+===============
+决策树dt：
+
+树：
+1、节点
+2、边
+
+关键词：
+1、根节点
+2、父节点
+3、子节点
+4、叶子结点
+
+
+10个人  （5个男， 5个女性）
+
+p(男) = 1/2
+p(女) = 1/2
+
+H= - 1/2 * log(1/2) * 2
+
+利用熵选择特征
+ID3——熵，信息增益
+C4.5——增益率
+
+
+男、女
+
+100
+眼镜，100
+
+
+0.9544
+
+青年：0.9183
+中年：0
+老年：0.9157
+
+
+多分类问题（数字识别0-9）
+
+连续特征，对应很多特征——离散化 才能用
+
+信息增益率
+
+Gain(A) / Entroy(A)
+
+A背后的集合大小
+
+1024样本，  A （100） B（800） C（1）  
+
+如果树太深，模型容易过拟合
+
+错误率，达到某一时刻，不降反升
+
+实例：
+1、基于Sklearn
+2、自主开发——学习
+
+RMSE
+
+=====
+
+集成学习
+
+80% -> 99%
+
+多个模型，每个模型预估一个结果
+
+智囊团概念
+
+基分类器
+
+（1）Bagging：并行
+（2）Boosting：
+
+
+决策树——弱分类器（容易过拟合、效果一般）
+
+w1 -> w2 -> w3 
+
+加性函数
+======
+
+4.14：
+（1）rf + gbdt 实例
+（2）word embedding（词嵌入）
+（3）tfidf——>Bm25
+（4）word2vec（DNN）——1层神经网络，深度学习铺垫
+
+gpu pytorch
+
+conda
+
+cpu：conda+pytorch
+gpu：conda+pytorch+cuda+cudnn
+
+gpu：1080i+cuda9.2+cudnn7.5
