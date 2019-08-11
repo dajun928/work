@@ -63,6 +63,11 @@ https://docs.wxpython.org/wx.Notebook.html?highlight=wx.notebook#wx-notebook
 
 
 
+# 读取数据
+data = pd.read_csv('data\\FBlocation\\train.csv')
+
+数据来源
+https://blog.csdn.net/weixin_42201701/article/details/85634234
 
 
 
