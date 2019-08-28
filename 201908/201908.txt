@@ -84,7 +84,8 @@ https://www.bilibili.com/video/av51983266/?p=24
 ----------------------------------------------------------------------
 
 
-
+python常用设计模式
+https://yq.aliyun.com/topic/122
 
 
 
