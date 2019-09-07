@@ -1,3 +1,16 @@
 https://www.bilibili.com/video/av57902673/?p=240
 
 https://www.bilibili.com/video/av55857574/?p=102
+
+
+python 多线程
+
+celery 异步任务
+
+flask 框架
+
+python读写ini文件
+
+python 全局变量
+
+装饰器
