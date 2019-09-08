@@ -28,9 +28,9 @@ formatTime = time.strptime(times,'%Y-%m-%d %H:%M:%S')
 print(time.strftime('%Y/%m/%d %H:%M:%S',formatTime))
 '''
 
-# now = time.time()
-# formatTime = time.localtime(now)
-
-# threeAgo = time.time() - 60*60*24*3
-# formatTime = time.localtime(threeAgo)
-# print(time.strftime('%Y-%m-%d %H:%M:%S',formatTime))
+now = time.time()
+formatTime = time.localtime(now)
+print(time.strftime('%Y-%m-%d %H:%M:%S',formatTime))
+threeAgo = time.time() - 60*60*24*3
+formatTime = time.localtime(threeAgo)
+print(time.strftime('%Y-%m-%d %H:%M:%S',formatTime))

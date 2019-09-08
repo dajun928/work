@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-  
 """
-@version : 
+@version : https://www.cnblogs.com/liuyl-2017/p/7833986.html
 @file : readconfig.py
 @time : 2019/09/08 00:17:22
 @func :
@@ -25,4 +25,3 @@ cfg.set("md5", "value", "1234")
 cfg.write(open('config.ini', "r+")) #可以把r+改成其他方式，看看结果:)
 
 
-# https://www.cnblogs.com/liuyl-2017/p/7833986.html

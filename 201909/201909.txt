@@ -14,3 +14,6 @@ python读写ini文件
 python 全局变量
 
 装饰器
+
+完整的flask项目
+https://blog.csdn.net/qq_33196814/article/details/80866094
