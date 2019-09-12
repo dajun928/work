@@ -26,4 +26,6 @@ https://blog.csdn.net/xubo245/article/details/51497487
 
 熟练windows键盘的快捷键
 
-Ctrl+w 关闭当前界面
+python 日志模块的使用
+访问记录
+错误记录
