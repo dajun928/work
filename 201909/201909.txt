@@ -13,7 +13,9 @@ python读写ini文件
 
 python 全局变量
 
-装饰器
+装饰器 耗时 打印变量
+
+pycharm Debug
 
 完整的flask项目
 https://blog.csdn.net/qq_33196814/article/details/80866094
@@ -29,3 +31,5 @@ https://blog.csdn.net/xubo245/article/details/51497487
 python 日志模块的使用
 访问记录
 错误记录
+
+git 工具&命令&github
