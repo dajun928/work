@@ -21,8 +21,7 @@ pycharm Debug
 https://blog.csdn.net/qq_33196814/article/details/80866094
 
 下载github项目中的某个文件夹或者文件
-https://blog.csdn.net/xubo245/article/details/51497487
-
+https://www.jianshu.com/p/74a0441ed9b7
 
 配置nginx
 
