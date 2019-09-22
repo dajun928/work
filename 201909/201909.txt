@@ -25,10 +25,41 @@ https://www.jianshu.com/p/74a0441ed9b7
 
 配置nginx
 
-熟练windows键盘的快捷键
+熟练windows键盘常用的快捷键
 
 python 日志模块的使用
 访问记录
 错误记录
 
 git 工具&命令&github
+
+熟练vi编辑常用命令
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
