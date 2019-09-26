@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-  
 """
 @version : 原文链接：https://blog.csdn.net/niedongri/article/details/79304770
+ 多模块使用logging https://blog.csdn.net/chosen0ne/article/details/7319306
 @time : 2019/09/26 23:41:59
 @func :使用强大的logging模块，把输出到指定的本地pc某个路径的文件中。
 
